@@ -155,7 +155,7 @@ char *get_ecm_historystring(struct s_client *cl){
 		int32_t ptr = cl->cwlastresptimes_last;
 
 		needed = CS_ECM_RINGBUFFER_MAX * 6; //5 digits + delimiter
-		if(!cs_malloc(&value, needed * sizeof(char), -1)) return "";
+		value = xzalloc(needed);
 
 		k = ptr + 1;
 		for (i = 0; i < CS_ECM_RINGBUFFER_MAX; i++) {
@@ -185,7 +185,7 @@ char *get_ecm_fullhistorystring(struct s_client *cl){
 		int32_t ptr = cl->cwlastresptimes_last;
 
 		needed = CS_ECM_RINGBUFFER_MAX * 20; //5 digits + : + returncode(2) + : + time(10) + delimiter
-		if(!cs_malloc(&value, needed * sizeof(char), -1)) return "";
+		value = xzalloc(needed);
 
 		k = ptr + 1;
 		for (i = 0; i < CS_ECM_RINGBUFFER_MAX; i++) {
@@ -1196,8 +1196,7 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 
 	if(strcmp(getParam(params, "action"), "Add") == 0) {
 		// Add new reader
-		struct s_reader *newrdr;
-		if(!cs_malloc(&newrdr,sizeof(struct s_reader), -1)) return "0";
+		struct s_reader *newrdr = xzalloc(sizeof(struct s_reader));
 		newrdr->next = NULL; // terminate list
 		newrdr->enable = 0; // do not start the reader because must configured before
 		ll_append(configured_readers, newrdr);
@@ -1971,7 +1970,7 @@ static char *send_oscam_user_config_edit(struct templatevars *vars, struct uripa
 			if(account != NULL) user[0] = '\0';
 			++i;
 		}
-		if (!cs_malloc(&account, sizeof(struct s_auth), -1)) return "0";
+		account = xzalloc(sizeof(struct s_auth));
 		if(cfg.account == NULL) cfg.account = account;
 		else {
 			for (ptr = cfg.account; ptr != NULL && ptr->next != NULL; ptr = ptr->next);
@@ -3463,7 +3462,7 @@ static char *send_oscam_services_edit(struct templatevars *vars, struct uriparam
 			if(sidtab != NULL) label[0] = '\0';
 			++i;
 		}
-		if (!cs_malloc(&sidtab, sizeof(struct s_sidtab), -1)) return "0";
+		sidtab = xzalloc(sizeof(struct s_sidtab));
 
 		if(cfg.sidtab == NULL) cfg.sidtab = sidtab;
 		else {
@@ -5120,10 +5119,7 @@ void http_srv(void) {
 			continue;
 		} else {
 			getpeername(s, (struct sockaddr *) &remote, &len);
-			if(!cs_malloc(&conn, sizeof(struct s_connection), -1)){
-				close(s);
-				continue;
-			}
+			conn = xzalloc(sizeof(struct s_connection));
 			setTCPTimeouts(s);
 			cur_client()->last = time((time_t*)0); //reset last busy time
 			conn->cl = cur_client();

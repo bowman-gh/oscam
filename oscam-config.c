@@ -159,14 +159,14 @@ static void chk_iprange(char *value, struct s_ip **base)
 	char *ptr1, *ptr2, *saveptr1 = NULL;
 	struct s_ip *fip, *lip, *cip;
 
-	cs_malloc(&cip, sizeof(struct s_ip), SIGINT);
+	cip = xzalloc(sizeof(struct s_ip));
 	fip = cip;
 
 	for (ptr1=strtok_r(value, ",", &saveptr1); ptr1; ptr1=strtok_r(NULL, ",", &saveptr1)) {
 			if (i == 0)
 				++i;
 		else {
-			cs_malloc(&cip, sizeof(struct s_ip), SIGINT);
+			cip = xzalloc(sizeof(struct s_ip));
 			lip->next = cip;
 		}
 
@@ -346,7 +346,7 @@ static void chk_port_tab(char *portasc, PTAB *ptab)
 	char *ptr1, *ptr2, *ptr3, *saveptr1 = NULL;
 	char *ptr[CS_MAXPORTS] = {0};
 	int32_t port[CS_MAXPORTS] = {0};
-	if(!cs_malloc(&newptab, sizeof(PTAB), -1)) return;
+	newptab = xzalloc(sizeof(PTAB));
 
 	for (nfilts = i = 0, ptr1 = strtok_r(portasc, ";", &saveptr1); (i < CS_MAXPORTS) && (ptr1); ptr1 = strtok_r(NULL, ";", &saveptr1), i++) {
 		ptr[i] = ptr1;
@@ -483,14 +483,11 @@ void chk_t_global(const char *token, char *value)
 				else if(!strcmp(pch, "syslog")) cfg.logtosyslog = 1;
 				else {
 					NULLFREE(cfg.logfile);
-					if(!cs_malloc(&(cfg.logfile), strlen(pch) + 1, -1)) continue;
-					else memcpy(cfg.logfile, pch, strlen(pch) + 1);
+					cfg.logfile = xstrdup(pch);
 				}
 			}
 		} else {
-			if(cs_malloc(&(cfg.logfile), strlen(CS_LOGFILE) + 1, -1))
-				memcpy(cfg.logfile, CS_LOGFILE, strlen(CS_LOGFILE) + 1);
-			else cfg.logtostdout = 1;
+			cfg.logfile = xstrdup(CS_LOGFILE);
 		}
 		return;
 	}
@@ -498,8 +495,7 @@ void chk_t_global(const char *token, char *value)
 	if (!strcmp(token, "usrfile")) {
 		NULLFREE(cfg.usrfile);
 		if (strlen(value) > 0) {
-			if(!cs_malloc(&(cfg.usrfile), strlen(value) + 1, -1)) return;
-			memcpy(cfg.usrfile, value, strlen(value) + 1);
+			cfg.usrfile = xstrdup(value);
 		} else cfg.disableuserfile = 1;
 		return;
 	}
@@ -507,8 +503,7 @@ void chk_t_global(const char *token, char *value)
 	if (!strcmp(token, "mailfile")) {
 		NULLFREE(cfg.mailfile);
 		if (strlen(value) > 0) {
-			if(!cs_malloc(&(cfg.mailfile), strlen(value) + 1, -1)) return;
-			memcpy(cfg.mailfile, value, strlen(value) + 1);
+			cfg.mailfile = xstrdup(value);
 		} else cfg.disablemail = 1;
 		return;
 	}
@@ -516,8 +511,7 @@ void chk_t_global(const char *token, char *value)
 	if (!strcmp(token, "cwlogdir")) {
 		NULLFREE(cfg.cwlogdir);
 		if (strlen(value) > 0) {
-			if(!cs_malloc(&(cfg.cwlogdir), strlen(value) + 1, -1)) return;
-			memcpy(cfg.cwlogdir, value, strlen(value) + 1);
+			cfg.cwlogdir = xstrdup(value);
 		}
 		return;
 	}
@@ -525,8 +519,7 @@ void chk_t_global(const char *token, char *value)
 	if (!strcmp(token, "emmlogdir")) {
 		NULLFREE(cfg.emmlogdir);
 		if (strlen(value) > 0) {
-			if(!cs_malloc(&(cfg.emmlogdir), strlen(value) + 1, -1)) return;
-			memcpy(cfg.emmlogdir, value, strlen(value) + 1);
+			cfg.emmlogdir = xstrdup(value);
 		}
 		return;
 	}
@@ -1516,8 +1509,7 @@ void chk_t_lcd(char *token, char *value)
 	if (!strcmp(token, "lcd_outputpath")) {
 		NULLFREE(cfg.lcd_output_path);
 		if (strlen(value) > 0) {
-			if(!cs_malloc(&(cfg.lcd_output_path), strlen(value) + 1, -1)) return;
-			memcpy(cfg.lcd_output_path, value, strlen(value) + 1);
+			cfg.lcd_output_path = xstrdup(value);
 		}
 		return;
 	}
@@ -1596,7 +1588,7 @@ void init_len4caid(void)
 	int32_t nr;
 	FILE *fp;
 	char *value, *token;
-	if(!cs_malloc(&token, MAXLINESIZE, -1)) return;
+	token = xzalloc(MAXLINESIZE);
 
 	memset(len4caid, 0, sizeof(uint16_t)<<8);
 	snprintf(token, MAXLINESIZE, "%s%s", cs_confdir, cs_l4ca);
@@ -1675,7 +1667,7 @@ int32_t init_config(void)
 	int32_t tag=TAG_GLOBAL;
 	FILE *fp;
 	char *value=NULL, *token;
-	if(!cs_malloc(&token, MAXLINESIZE, -1)) return 1;
+	token = xzalloc(MAXLINESIZE);
 
 	cfg.nice = 99;
 	cfg.ctimeout = CS_CLIENT_TIMEOUT;
@@ -1780,9 +1772,7 @@ int32_t init_config(void)
 	fclose(fp);
 
 	if (!cfg.logfile && cfg.logtostdout == 0 && cfg.logtosyslog == 0) {
-		if(cs_malloc(&(cfg.logfile), strlen(CS_LOGFILE) + 1, -1))
-			memcpy(cfg.logfile, CS_LOGFILE, strlen(CS_LOGFILE) + 1);
-		else cfg.logtostdout = 1;
+		cfg.logfile = xstrdup(CS_LOGFILE);
 	}
 	if(cfg.usrfile == NULL) cfg.disableuserfile = 1;
 	if(cfg.mailfile == NULL) cfg.disablemail = 1;
@@ -1854,8 +1844,8 @@ void chk_account(const char *token, char *value, struct s_auth *account)
 #ifdef WEBIF
 	if (!strcmp(token, "description")) {
 		NULLFREE(account->description);
-		if(strlen(value) > 0 && cs_malloc(&account->description, strlen(value)+1, -1)){
-			cs_strncpy(account->description, value, strlen(value)+1);
+		if(strlen(value) > 0) {
+			account->description = xstrdup(value);
 		}
 		return;
 	}
@@ -3258,7 +3248,7 @@ struct s_auth *init_userdb(void)
 	char *value, *token;
 	struct s_auth *account = NULL;
 	struct s_auth *probe = NULL;
-	if(!cs_malloc(&token, MAXLINESIZE, -1)) return authptr;
+	token = xzalloc(MAXLINESIZE);
 
 	snprintf(token, MAXLINESIZE, "%s%s", cs_confdir, cs_user);
 	if (!(fp = fopen(token, "r"))) {
@@ -3278,10 +3268,7 @@ struct s_auth *init_userdb(void)
 			token[l - 1] = 0;
 			tag = (!strcmp("account", strtolower(token + 1)));
 
-			if(!cs_malloc(&ptr, sizeof(struct s_auth), -1)){
-				free(token);
-				return authptr;
-			}
+			ptr = xzalloc(sizeof(struct s_auth));
 			if (account)
 				account->next = ptr;
 			else
@@ -3374,9 +3361,9 @@ static void chk_entry4sidtab(char *value, struct s_sidtab *sidtab, int32_t what)
   }
   //if (!i) return(0);
   if (b==sizeof(uint16_t)){
-    if(!cs_malloc(&slist, i*sizeof(uint16_t), -1)) return;
+    slist = xzalloc(i * sizeof(uint16_t));
   } else {
-  	if(!cs_malloc(&llist, i*sizeof(uint32_t), -1)) return;
+    llist = xzalloc(i * sizeof(uint32_t));
   }
   cs_strncpy(value, buf, sizeof(buf));
   for (i=0, ptr=strtok_r(value, ",", &saveptr1); ptr; ptr=strtok_r(NULL, ",", &saveptr1))
@@ -3430,7 +3417,7 @@ int32_t init_sidtab(void) {
 	int32_t nr, nro, nrr;
 	FILE *fp;
 	char *value, *token;
-	if(!cs_malloc(&token, MAXLINESIZE, -1)) return 1;
+	token = xzalloc(MAXLINESIZE);
 	struct s_sidtab *ptr;
 	struct s_sidtab *sidtab=(struct s_sidtab *)0;
 
@@ -3462,10 +3449,7 @@ int32_t init_sidtab(void) {
 				nr++;
 				nrr++;
 			} else {
-				if (!cs_malloc(&ptr, sizeof(struct s_sidtab), -1)) {
-					free(token);
-					return(1);
-				}
+				ptr = xzalloc(sizeof(struct s_sidtab));
 				if (sidtab)
 					sidtab->next=ptr;
 				else
@@ -3497,7 +3481,7 @@ int32_t init_provid(void) {
 	int32_t nr;
 	FILE *fp;
 	char *payload, *saveptr1 = NULL, *token;
-	if(!cs_malloc(&token, MAXLINESIZE, -1)) return 0;
+	token = xzalloc(MAXLINESIZE);
 	static struct s_provid *provid=(struct s_provid *)0;
 	snprintf(token, MAXLINESIZE, "%s%s", cs_confdir, cs_provid);
 
@@ -3521,11 +3505,7 @@ int32_t init_provid(void) {
 
 		*payload++ = '\0';
 
-		if (!cs_malloc(&ptr, sizeof(struct s_provid), -1)) {
-			free(token);
-			fclose(fp);
-			return(1);
-		}
+		ptr = xzalloc(sizeof(struct s_provid));
 		if (provid)
 			provid->next = ptr;
 		else
@@ -3569,7 +3549,7 @@ int32_t init_srvid(void)
 	int32_t nr = 0, i;
 	FILE *fp;
 	char *payload, *tmp, *saveptr1 = NULL, *token;
-	if(!cs_malloc(&token, MAXLINESIZE, -1)) return 0;
+	token = xzalloc(MAXLINESIZE);
 	struct s_srvid *srvid=NULL, *new_cfg_srvid[16], *last_srvid[16];
 	snprintf(token, MAXLINESIZE, "%s%s", cs_confdir, cs_srid);
 	// A cache for strings within srvids. A checksum is calculated which is the start point in the array (some kind of primitive hash algo).
@@ -3601,11 +3581,7 @@ int32_t init_srvid(void)
 		if (!(payload=strchr(token, '|'))) continue;
 		*payload++ = '\0';
 
-		if (!cs_malloc(&srvid, sizeof(struct s_srvid), -1)){
-			free(token);
-			fclose(fp);
-			return(1);
-		}
+		srvid = xzalloc(sizeof(struct s_srvid));
 
 		char tmptxt[128];
 
@@ -3632,12 +3608,11 @@ int32_t init_srvid(void)
 			len+=strlen(ptr1)+1;
 		}
 
-		char *tmpptr = NULL;
-		if (len > 0 && !cs_malloc(&tmpptr, len, 0))
+		if (len > 0)
 			continue;
 
-		srvid->data=tmpptr;
-		memcpy(tmpptr, tmptxt, len);
+		srvid->data = xstrdup(tmptxt);
+		char *tmpptr = srvid->data;
 
 		for (i=0;i<4;i++) {
 			if (searchptr[i]) {
@@ -3653,8 +3628,10 @@ int32_t init_srvid(void)
 				for(j = 0; j < len2; ++j) pos += (uint8_t)tmp[j];
 				pos = pos%1024;
 				if(used[pos] >= allocated[pos]){
-					if(allocated[pos] == 0) cs_malloc(&stringcache[pos], 16 * sizeof(char*), SIGINT);
-					else cs_realloc(&stringcache[pos], (allocated[pos] + 16) * sizeof(char*), SIGINT);
+					if(allocated[pos] == 0)
+						stringcache[pos] = xzalloc(16 * sizeof(char *));
+					else
+						cs_realloc(&stringcache[pos], (allocated[pos] + 16) * sizeof(char*), SIGINT);
 					allocated[pos] += 16;
 				}
 				stringcache[pos][used[pos]] = tmp;
@@ -3732,7 +3709,7 @@ int32_t init_tierid(void)
 	int32_t nr;
 	FILE *fp;
 	char *payload, *saveptr1 = NULL, *token;
-	if(!cs_malloc(&token, MAXLINESIZE, -1)) return 0;
+	token = xzalloc(MAXLINESIZE);
 	static struct s_tierid *tierid=NULL, *new_cfg_tierid=NULL;
 	snprintf(token, MAXLINESIZE, "%s%s", cs_confdir, cs_trid);
 
@@ -3756,11 +3733,7 @@ int32_t init_tierid(void)
 		if (!(tieridasc = strchr(token, ':'))) continue;
 		*payload++ = '\0';
 
-		if (!cs_malloc(&ptr,sizeof(struct s_tierid), -1)){
-			free(token);
-			fclose(fp);
-			return(1);
-		}
+		ptr = xzalloc(sizeof(struct s_tierid));
 		if (tierid)
 			tierid->next = ptr;
 		else
@@ -3868,9 +3841,8 @@ void chk_reader(char *token, char *value, struct s_reader *rdr)
 #ifdef WEBIF
 	if (!strcmp(token, "description")) {
 		NULLFREE(rdr->description);
-		if(strlen(value) > 0 && cs_malloc(&rdr->description, strlen(value)+1, -1)){
-			cs_strncpy(rdr->description, value, strlen(value)+1);
-		}
+		if(strlen(value) > 0)
+			rdr->description = xstrdup(value);
 		return;
 	}
 #endif
@@ -3890,7 +3862,7 @@ void chk_reader(char *token, char *value, struct s_reader *rdr)
       switch(i) {
         case 0:
           len = strlen(ptr) / 2 + (16 - (strlen(ptr) / 2) % 16);
-          if(!cs_malloc(&buf,len, -1)) return;
+          buf = xzalloc(len);
           key_atob_l(ptr, buf, strlen(ptr));
           cs_log("enc %d: %s", len, ptr);
           break;
@@ -4021,8 +3993,7 @@ void chk_reader(char *token, char *value, struct s_reader *rdr)
 	if (!strcmp(token, "readnano")) {
 		NULLFREE(rdr->emmfile);
 		if (strlen(value) > 0) {
-			if(!cs_malloc(&(rdr->emmfile), strlen(value) + 1, -1)) return;
-			memcpy(rdr->emmfile, value, strlen(value) + 1);
+			rdr->emmfile = xstrdup(value);
 		}
 		return;
 	}

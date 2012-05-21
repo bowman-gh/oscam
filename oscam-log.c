@@ -87,7 +87,7 @@ static void cs_write_log_int(char *txt)
 	if(exit_oscam == 1) {
 		cs_write_log(txt, 1);
 	} else {
-		struct s_log * log = cs_malloc(&log, sizeof(struct s_log), 0);
+		struct s_log * log = xzalloc(sizeof(struct s_log));
 		log->txt = xstrdup(txt);
 		log->header_len = 0;
 		log->direct_log = 1;
@@ -154,27 +154,26 @@ void cs_reinit_loghist(uint32_t size)
 {
 	char *tmp = NULL, *tmp2;
 	if(size != cfg.loghistorysize){
-		if(size == 0 || cs_malloc(&tmp, size, -1)){
-			cs_writelock(&loghistory_lock);
-			tmp2 = loghist;
-			// On shrinking, the log is not copied and the order is reversed
-			if(size < cfg.loghistorysize){
-				cfg.loghistorysize = size;
-				cs_sleepms(20);	// Monitor or webif may be currently outputting the loghistory but don't use locking so we sleep a bit...
-				loghistptr = tmp;
-				loghist = tmp;
-			} else {
-				if(loghist){
-					memcpy(tmp, loghist, cfg.loghistorysize);
-					loghistptr = tmp + (loghistptr - loghist);
-				} else loghistptr = tmp;
-				loghist = tmp;
-				cs_sleepms(20);	// Monitor or webif may be currently outputting the loghistory but don't use locking so we sleep a bit...
-				cfg.loghistorysize = size;
-			}
-			cs_writeunlock(&loghistory_lock);
-			if(tmp2 != NULL) add_garbage(tmp2);
+		tmp = xzalloc(size);
+		cs_writelock(&loghistory_lock);
+		tmp2 = loghist;
+		// On shrinking, the log is not copied and the order is reversed
+		if(size < cfg.loghistorysize){
+			cfg.loghistorysize = size;
+			cs_sleepms(20);	// Monitor or webif may be currently outputting the loghistory but don't use locking so we sleep a bit...
+			loghistptr = tmp;
+			loghist = tmp;
+		} else {
+			if(loghist){
+				memcpy(tmp, loghist, cfg.loghistorysize);
+				loghistptr = tmp + (loghistptr - loghist);
+			} else loghistptr = tmp;
+			loghist = tmp;
+			cs_sleepms(20);	// Monitor or webif may be currently outputting the loghistory but don't use locking so we sleep a bit...
+			cfg.loghistorysize = size;						
 		}
+		cs_writeunlock(&loghistory_lock);
+		if(tmp2 != NULL) add_garbage(tmp2);			
 	}
 }
 #endif
@@ -275,7 +274,7 @@ static void write_to_log_int(char *txt, int8_t header_len)
 	if (cfg.disablelog) return;
 #endif
 
-	struct s_log *log = cs_malloc(&log, sizeof(struct s_log), 0);
+	struct s_log *log = xzalloc(sizeof(struct s_log));
 	log->txt = xstrdup(txt);
 	log->header_len = header_len;
 	log->direct_log = 0;

@@ -22,7 +22,7 @@ static int8_t b64decoder[256];
 char *tpl_addVar(struct templatevars *vars, uint8_t addmode, char *name, char *value){
 	if(name == NULL || value == NULL) return "";
 	int32_t i;
-	char *tmp,*result = NULL;
+	char *tmp=NULL,*result = NULL;
 	for(i = (*vars).varscnt-1; i >= 0; --i){
 		if(strcmp((*vars).names[i], name) == 0){
 			result = (*vars).values[i];
@@ -37,15 +37,11 @@ char *tpl_addVar(struct templatevars *vars, uint8_t addmode, char *name, char *v
 			(*vars).varsalloc = (*vars).varscnt * 2;
 		}
 		int32_t len = strlen(name) + 1;
-		if(!cs_malloc(&tmp, len * sizeof(char), -1)) return "";
-		memcpy(tmp, name, len);
+		tmp = xstrdup(name);
 		(*vars).names[(*vars).varscnt] = tmp;
 
 		len = strlen(value) + 1;
-		if(!cs_malloc(&tmp, len * sizeof(char), -1)){
-			free((*vars).names[(*vars).varscnt]);
-			return "";
-		}
+		tmp = xzalloc(len);
 		memcpy(tmp, value, len);
 		(*vars).values[(*vars).varscnt] = tmp;
 		(*vars).vartypes[(*vars).varscnt] = addmode;
@@ -86,9 +82,7 @@ char *tpl_printf(struct templatevars *vars, uint8_t addmode, char *varname, char
 	va_start(argptr,fmtstring);
 	needed = vsnprintf(test, 1, fmtstring, argptr);
 	va_end(argptr);
-
-	char *result;
-	if(!cs_malloc(&result, (needed + 1) * sizeof(char), -1)) return "";
+	char *result = xzalloc(needed + 1);
 	va_start(argptr,fmtstring);
 	vsnprintf(result, needed + 1, fmtstring, argptr);
 	va_end(argptr);
@@ -116,14 +110,9 @@ char *tpl_getVar(struct templatevars *vars, char *name){
 	else {
 		if((*vars).vartypes[i] == TPLADDONCE || (*vars).vartypes[i] == TPLAPPENDONCE){
 			// This is a one-time-use variable which gets cleaned up automatically after retrieving it
-			if(!cs_malloc(&(*vars).values[i], 1 * sizeof(char), -1)){
-				(*vars).values[i] = result;
-				result[0] = '\0';
-				return result;
-			} else {
-				(*vars).values[i][0] = '\0';
-				return tpl_addTmp(vars, result);
-			}
+			(*vars).values[i] = xzalloc(1);
+			(*vars).values[i][0] = '\0';
+			return tpl_addTmp(vars, result);
 		} else return result;
 	}
 }
@@ -132,33 +121,15 @@ char *tpl_getVar(struct templatevars *vars, char *name){
    sure to call tpl_clear() when you are finished or you'll run into a memory leak! */
 struct templatevars *tpl_create(void) {
 	struct templatevars *vars;
-	if(!cs_malloc(&vars, sizeof(struct templatevars), -1)) return NULL;
+	vars = xzalloc(sizeof(struct templatevars));
 	(*vars).varsalloc = 64;
 	(*vars).varscnt = 0;
 	(*vars).tmpalloc = 64;
 	(*vars).tmpcnt = 0;
-	if(!cs_malloc(&(*vars).names, (*vars).varsalloc * sizeof(char**), -1)){
-		free(vars);
-		return NULL;
-	}
-	if(!cs_malloc(&(*vars).values, (*vars).varsalloc * sizeof(char**), -1)){
-		free((*vars).names);
-		free(vars);
-		return NULL;
-	};
-	if(!cs_malloc(&(*vars).vartypes, (*vars).varsalloc * sizeof(uint8_t*), -1)){
-		free((*vars).names);
-		free((*vars).values);
-		free(vars);
-		return NULL;
-	};
-	if(!cs_malloc(&(*vars).tmp, (*vars).tmpalloc * sizeof(char**), -1)){
-		free((*vars).names);
-		free((*vars).values);
-		free((*vars).vartypes);
-		free(vars);
-		return NULL;
-	};
+	(*vars).names = xzalloc((*vars).varsalloc * sizeof(char *));
+	(*vars).values = xzalloc((*vars).varsalloc * sizeof(char *));
+	(*vars).vartypes = xzalloc((*vars).varsalloc * sizeof(char *));
+	(*vars).tmp = xzalloc((*vars).tmpalloc * sizeof(char *));
 	return vars;
 }
 
@@ -212,7 +183,7 @@ static char *tpl_getUnparsedTpl(const char* name, int8_t removeHeader, const cha
 			FILE *fp;
 			char buffer[1024];
 			int32_t read, allocated = 1025, offset, size = 0;
-			if(!cs_malloc(&result, allocated * sizeof(char), -1)) return NULL;
+			result = xzalloc(allocated);
 			if((fp = fopen(path,"r"))!=NULL){
 			while((read = fread(&buffer,sizeof(char),1024,fp)) > 0){
 				offset = 0;
@@ -240,12 +211,9 @@ static char *tpl_getUnparsedTpl(const char* name, int8_t removeHeader, const cha
 	  }
   }
  	if(i >= 0 && i < tplmapcnt){
- 		int32_t len = (strlen(tplmap[i])) + 1;
- 		if(!cs_malloc(&result, len * sizeof(char), -1)) return NULL;
- 		memcpy(result, tplmap[i], len);
+ 		result = xstrdup(tplmap[i]);
  	} else {
- 		if(!cs_malloc(&result, 1 * sizeof(char), -1)) return NULL;
- 		result[0] = '\0';
+ 		result = xzalloc(1);
   }
  	return result;
 }
@@ -263,8 +231,7 @@ char *tpl_getTpl(struct templatevars *vars, const char* name){
 
 	int32_t tmp,respos = 0;
 	int32_t allocated = 2 * strlen(tpl) + 1;
-	char *result;
-	if(!cs_malloc(&result, allocated * sizeof(char), -1)) return "";
+	char *result = xzalloc(allocated);
 
 	while(tpl < tplend){
 		if(tpl[0] == '#' && tpl[1] == '#' && tpl[2] != '#'){
@@ -668,11 +635,7 @@ void send_file(FILE *f, char *filename, char* subdir, time_t modifiedheader, uin
 			FILE *fp;
 			int32_t read;
 			if((fp = fopen(filename, "r"))==NULL) return;
-			if(!cs_malloc(&allocated, st.st_size + 1, -1)){
-				send_error500(f);
-				fclose(fp);
-				return;
-			}
+			allocated = xmalloc(st.st_size + 1);
 			if((read = fread(allocated, 1, st.st_size, fp)) == st.st_size){
 			  allocated[read] = '\0';
 			}
@@ -681,17 +644,10 @@ void send_file(FILE *f, char *filename, char* subdir, time_t modifiedheader, uin
 
 		if (fileno == 1 && cfg.http_prepend_embedded_css) { // Prepend Embedded CSS
 			char* separator = "/* External CSS */";
-			char* oldallocated = allocated;
-			int32_t newsize = strlen(CSS) + strlen(separator) + 2;
-			if (oldallocated) newsize += strlen(oldallocated) + 1;
-			if(!cs_malloc(&allocated, newsize, -1)){
-				if (oldallocated) free(oldallocated);
-				send_error500(f);
-				return;
-			}
-			snprintf(allocated, newsize, "%s\n%s\n%s",
+			char *oldallocated = allocated;
+			allocated = xasprintf("%s\n%s\n%s",
 					 CSS, separator, (oldallocated != NULL ? oldallocated : ""));
-			if (oldallocated) free(oldallocated);
+			free(oldallocated);
 		}
 
 		if (allocated) result = allocated;
@@ -761,17 +717,13 @@ char *urlencode(struct templatevars *vars, char *str){
 		++pstr;
 	}
 	*pbuf = '\0';
-	/* Allocate the needed memory size and store it in the templatevars */
-	if(!cs_malloc(&pbuf, strlen(buf) + 1, -1)) return "";
-	memcpy(pbuf, buf, strlen(buf) + 1);
-	return tpl_addTmp(vars, pbuf);
+	return tpl_addTmp(vars, xstrdup(buf));
 }
 
 /* XML-Escapes a char array. The returned reference will be automatically cleaned through the templatevars-mechanism tpl_clear().
    Do not call free() or realloc on the returned reference or you will get memory corruption! */
 char *xml_encode(struct templatevars *vars, char *chartoencode) {
 	int32_t i, pos = 0, len = strlen(chartoencode);
-	char *result;
 	/* In worst case, every character could get converted to 6 chars (we only support ASCII, for Unicode it would be 7)*/
 	char encoded[len * 6 + 1], buffer[7];
 	for (i = 0; i < len; ++i){
@@ -796,10 +748,7 @@ char *xml_encode(struct templatevars *vars, char *chartoencode) {
 		}
 	}
 	/* Allocate the needed memory size and store it in the templatevars */
-	if(!cs_malloc(&result, pos + 1, -1)) return "";
-	memcpy(result, encoded, pos);
-	result[pos] = '\0';
-	return tpl_addTmp(vars, result);
+	return tpl_addTmp(vars, xstrdup(encoded));
 }
 
 /* Prepares the base64 decoding array */
@@ -866,9 +815,6 @@ char *sec2timeformat(struct templatevars *vars, int32_t seconds) {
 	if(seconds <= 0)
 		return "00:00:00";
 
-	if(!cs_malloc(&value, 16 * sizeof(char), -1))
-		return "00:00:00";
-
 	int32_t secs = 0, fullmins = 0, mins = 0, fullhours = 0, hours = 0,	days = 0;
 
 	secs = seconds % 60;
@@ -883,9 +829,9 @@ char *sec2timeformat(struct templatevars *vars, int32_t seconds) {
 	}
 
 	if(days == 0)
-		snprintf(value, 16, "%02d:%02d:%02d", hours, mins, secs);
+		value = xasprintf("%02d:%02d:%02d", hours, mins, secs);
 	else
-		snprintf(value, 16, "%02dd %02d:%02d:%02d", days, hours, mins, secs);
+		value = xasprintf("%02dd %02d:%02d:%02d", days, hours, mins, secs);
 
 	return tpl_addTmp(vars, value);
 }
@@ -957,13 +903,12 @@ void SSL_locking_function(int32_t mode, int32_t type, const char *file, int32_t 
 }
 
 struct CRYPTO_dynlock_value *SSL_dyn_create_function(const char *file, int32_t line){
-    struct CRYPTO_dynlock_value *l;
-    if(!cs_malloc(&l, sizeof(struct CRYPTO_dynlock_value), -1)) return (NULL);
-		if(pthread_mutex_init(&l->mutex, NULL)) {
-			// Initialization of mutex failed.
-			free(l);
-			return (NULL);
-		}
+    struct CRYPTO_dynlock_value *l = xzalloc(sizeof(struct CRYPTO_dynlock_value));
+	if(pthread_mutex_init(&l->mutex, NULL)) {
+		// Initialization of mutex failed.
+		free(l);
+		return (NULL);
+	}
     pthread_mutex_init(&l->mutex, NULL);
     // just to remove compiler warnings...
 		if(file || line) return l;

@@ -36,11 +36,11 @@
 #endif
 
 #ifndef LCDSUPPORT
-//#define LCDSUPPORT
+#define LCDSUPPORT
 #endif
 
 #ifndef IPV6SUPPORT
-//#define IPV6SUPPORT
+#define IPV6SUPPORT
 #endif
 
 //
@@ -52,7 +52,7 @@
 #endif
 
 #ifndef MODULE_CAMD33
-//#define MODULE_CAMD33
+#define MODULE_CAMD33
 #endif
 
 #ifndef MODULE_CAMD35

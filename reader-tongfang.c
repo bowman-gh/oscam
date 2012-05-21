@@ -100,7 +100,6 @@ static int32_t tongfang_do_ecm(struct s_reader * reader, const ECM_REQUEST *er, 
   uchar ecm_cmd[200];
   int32_t ecm_len;
   const uchar *pbuf = er->ecm;
-  char *tmp;
   int32_t i = 0;
   int32_t write_len = 0;
   def_resp;
@@ -110,10 +109,9 @@ static int32_t tongfang_do_ecm(struct s_reader * reader, const ECM_REQUEST *er, 
   uint16_t status = 0;
 
   if((ecm_len = check_sct_len(er->ecm, 3)) < 0) return ERROR;
-	if(cs_malloc(&tmp, ecm_len * 3 + 1, -1)){
-		rdr_debug_mask(reader, D_IFD, "ECM: %s", cs_hexdump(1, er->ecm, ecm_len, tmp, ecm_len * 3 + 1));
-		free(tmp);
-	}
+
+  char tmp[ecm_len * 3 + 1];
+  cs_debug_mask(D_IFD, "ECM: %s", cs_hexdump(1, er->ecm, ecm_len, tmp, ecm_len * 3 + 1));
 
   for(i = 0; i < (ecm_len - 1); i++)
   {

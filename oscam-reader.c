@@ -107,24 +107,20 @@ void cs_add_entitlement(struct s_reader *rdr, uint16_t caid, uint32_t provid, ui
 {
 	if (!rdr->ll_entitlements) rdr->ll_entitlements = ll_create("ll_entitlements");
 
-	S_ENTITLEMENT *item;
-	if(cs_malloc(&item,sizeof(S_ENTITLEMENT), -1)){
+	S_ENTITLEMENT *item = xzalloc(sizeof(S_ENTITLEMENT));
 
-		// fill item
-		item->caid = caid;
-		item->provid = provid;
-		item->id = id;
-		item->class = class;
-		item->start = start;
-		item->end = end;
-		item->type = type;
+	item->caid = caid;
+	item->provid = provid;
+	item->id = id;
+	item->class = class;
+	item->start = start;
+	item->end = end;
+	item->type = type;
 
-		//add item
-		ll_append(rdr->ll_entitlements, item);
+	//add item
+	ll_append(rdr->ll_entitlements, item);
 
-	  // cs_debug_mask(D_TRACE, "entitlement: Add caid %4X id %4X %s - %s ", item->caid, item->id, item->start, item->end);
-	}
-
+	// cs_debug_mask(D_TRACE, "entitlement: Add caid %4X id %4X %s - %s ", item->caid, item->id, item->start, item->end);
 }
 
 /**
@@ -810,7 +806,7 @@ int32_t reader_init(struct s_reader *reader) {
 		if ((reader->log_port) && (reader->ph.c_init_log))
 			reader->ph.c_init_log();
 
-		cs_malloc(&client->ecmtask, cfg.max_pending * sizeof(ECM_REQUEST), 1);
+		client->ecmtask = xzalloc(cfg.max_pending * sizeof(ECM_REQUEST));
 
 		rdr_log(reader, "proxy initialized, server %s:%d", reader->device, reader->r_port);
 	}
@@ -845,7 +841,7 @@ int32_t reader_init(struct s_reader *reader) {
 
 #endif
 
-	cs_malloc(&client->emmcache,CS_EMMCACHESIZE*(sizeof(struct s_emm)), 1);
+	client->emmcache = xzalloc(CS_EMMCACHESIZE * sizeof(struct s_emm));
 
 	client->login=time((time_t*)0);
 	client->init_done=1;

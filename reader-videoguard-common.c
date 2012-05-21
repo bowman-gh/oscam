@@ -550,8 +550,8 @@ int32_t status_ok(const unsigned char *status)
 }
 
 void memorize_cmd_table (struct s_reader * reader, const unsigned char *mem, int32_t size){
-  if(cs_malloc(&reader->cmd_table,sizeof(unsigned char) * size, -1))
-  	memcpy(reader->cmd_table,mem,size);
+  reader->cmd_table = xmalloc(size);
+  memcpy(reader->cmd_table,mem,size);
 }
 
 int32_t cmd_table_get_info(struct s_reader * reader, const unsigned char *cmd, unsigned char *rlen, unsigned char *rmode)
@@ -901,12 +901,7 @@ static void msgs_init(uint32_t baseyear)
    char buffer[2048];
    while (fgets(buffer, sizeof(buffer), fp))
    {
-      MAILMSG *msg;
-      if (cs_malloc(&msg, sizeof(MAILMSG), -1) == 0)
-      {
-         fclose(fp);
-         return;
-      }
+      MAILMSG *msg = xzalloc(sizeof(MAILMSG));
       sscanf(buffer, "%04hX:%08X:%02d/%02d/%04d:%04hX", &msg->caid, &msg->serial, &day, &mon, &year, &msg->id);
       year -= baseyear;
       msg->date = ((year * 12) + mon - 1) << 8 | day;
@@ -940,8 +935,7 @@ void videoguard_mail_msg(struct s_reader *rdr, uint8_t *data)
 
    if (msg == 0)
    {
-      if (cs_malloc(&msg, sizeof(MAILMSG), -1) == 0)
-         return;
+      msg = xzalloc(sizeof(MAILMSG));
       msg->caid = rdr->caid;
       msg->serial = serial;
       msg->date = date;
@@ -950,12 +944,7 @@ void videoguard_mail_msg(struct s_reader *rdr, uint8_t *data)
       msg->mask = 1 << index;
       msg->written = 0;
       msg->len = submsg_len;
-      if (cs_malloc(&msg->message, msg_size, -1) == 0)
-      {
-         free(msg);
-         return;
-      }
-      memset(msg->message, 0, msg_size);
+      msg->message = xzalloc(msg_size);
       memcpy(&msg->message[submsg_idx], &data[15], submsg_len);
       msg->subject = 0;
       ll_append(vg_msgs, msg);

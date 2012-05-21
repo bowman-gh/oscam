@@ -114,17 +114,15 @@ int32_t cs_add_cacheex_stats(struct s_client *cl, uint16_t caid, uint16_t srvid,
 	}
 
 	// if we land here we have to add a new entry
-	if(cs_malloc(&cacheex_stats_entry, sizeof(S_CACHEEX_STAT_ENTRY), -1)){
-		cacheex_stats_entry->cache_caid = caid;
-		cacheex_stats_entry->cache_srvid = srvid;
-		cacheex_stats_entry->cache_prid = prid;
-		cacheex_stats_entry->cache_count = 1;
-		cacheex_stats_entry->cache_last = now;
-		cacheex_stats_entry->cache_direction = direction;
-		ll_iter_insert(&itr, cacheex_stats_entry);
-		return 1;
-	}
-	return 0;
+	cacheex_stats_entry = xzalloc(sizeof(S_CACHEEX_STAT_ENTRY));
+	cacheex_stats_entry->cache_caid = caid;
+	cacheex_stats_entry->cache_srvid = srvid;
+	cacheex_stats_entry->cache_prid = prid;
+	cacheex_stats_entry->cache_count = 1;
+	cacheex_stats_entry->cache_last = now;
+	cacheex_stats_entry->cache_direction = direction;
+	ll_iter_insert(&itr, cacheex_stats_entry);
+	return 1;
 }
 #endif
 
@@ -154,9 +152,7 @@ int32_t cs_check_v(uint32_t ip, int32_t port, int32_t add, char *info) {
 				result=1;
 				if (!info) info = v_ban_entry->info;
 				else if (!v_ban_entry->info) {
-					int32_t size = strlen(info)+1;
-					v_ban_entry->info = cs_malloc(&v_ban_entry->info, size, -1);
-					strncpy(v_ban_entry->info, info, size);
+					v_ban_entry->info = xstrdup(info);
 				}
 
 				if (!add) {
@@ -179,23 +175,19 @@ int32_t cs_check_v(uint32_t ip, int32_t port, int32_t add, char *info) {
 			}
 		}
 		if (add && !result) {
-			if(cs_malloc(&v_ban_entry, sizeof(V_BAN), -1)){
-				v_ban_entry->v_time = time((time_t *)0);
-				v_ban_entry->v_ip = ip;
-				v_ban_entry->v_port = port;
-				v_ban_entry->v_count = 1;
-				if (info) {
-					int32_t size = strlen(info)+1;
-					v_ban_entry->info = cs_malloc(&v_ban_entry->info, size, -1);
-					strncpy(v_ban_entry->info, info, size);
-				}
+			v_ban_entry = xzalloc(sizeof(V_BAN));
+			v_ban_entry->v_time = time(NULL);
+			v_ban_entry->v_ip = ip;
+			v_ban_entry->v_port = port;
+			v_ban_entry->v_count = 1;
+			if (info)
+				v_ban_entry->info = xstrdup(info);
 
-				ll_iter_insert(&itr, v_ban_entry);
+			ll_iter_insert(&itr, v_ban_entry);
 
-				cs_debug_mask(D_TRACE, "failban: ban ip %s:%d with timestamp %ld%s%s",
-						cs_inet_ntoa(v_ban_entry->v_ip), v_ban_entry->v_port, v_ban_entry->v_time,
-						info?", info: ":"", info?info:"");
-			}
+			cs_debug_mask(D_TRACE, "failban: ban ip %s:%d with timestamp %ld%s%s",
+					cs_inet_ntoa(v_ban_entry->v_ip), v_ban_entry->v_port, v_ban_entry->v_time, 
+					info?", info: ":"", info?info:"");
 		}
 	}
 	return result;
@@ -1125,15 +1117,14 @@ void cs_reinit_clients(struct s_auth *new_accounts)
 }
 
 struct s_client * create_client(in_addr_t ip) {
-	struct s_client *cl;
+	struct s_client *cl = xzalloc(sizeof(struct s_client));
 
-	if(cs_malloc(&cl, sizeof(struct s_client), -1)){
-		//client part
-		cl->ip=ip;
-		cl->account = first_client->account;
+	//client part
+	cl->ip=ip;
+	cl->account = first_client->account;
 
-		//master part
-		pthread_mutex_init(&cl->thread_lock, NULL);
+	//master part
+	pthread_mutex_init(&cl->thread_lock, NULL);
 
 		cl->login=cl->last=time((time_t *)0);
 
@@ -1155,16 +1146,17 @@ struct s_client * create_client(in_addr_t ip) {
 				if(found || cl->tid == 0){
 					cl->tid = (uint32_t)rand();
 				}
-			} while (found || cl->tid == 0);
-		}
-		for (last=first_client; last->next != NULL; last=last->next); //ends with cl on last client
-		last->next = cl;
-		cs_writeunlock(&clientlist_lock);
-	} else {
-		cs_log("max connections reached (out of memory) -> reject client %s", cs_inet_ntoa(ip));
-		return NULL;
+			}
+			if(found || cl->tid == 0){
+				cl->tid = (uint32_t)rand();
+			}
+		} while (found || cl->tid == 0);
 	}
-	return(cl);
+	for (last=first_client; last->next != NULL; last=last->next); //ends with cl on last client
+	last->next = cl;
+	cs_writeunlock(&clientlist_lock);
+
+	return cl;
 }
 
 
@@ -1176,28 +1168,16 @@ static void init_first_client(void)
 	char buf[256];
 	struct passwd *pwdbuf;
 	if ((getpwuid_r(getuid(), &pwd, buf, sizeof(buf), &pwdbuf)) == 0){
-		if(cs_malloc(&processUsername, strlen(pwd.pw_name) + 1, -1))
-			cs_strncpy(processUsername, pwd.pw_name, strlen(pwd.pw_name) + 1);
-		else
-			processUsername = "root";
+		processUsername = xstrdup(pwd.pw_name);
 	} else
-		processUsername = "root";
+		processUsername = xstrdup("root");
 
-  if(!cs_malloc(&first_client, sizeof(struct s_client), -1)){
-    fprintf(stderr, "Could not allocate memory for master client, exiting...");
-    exit(1);
-  }
-  first_client->next = NULL; //terminate clients list with NULL
+  first_client = xzalloc(sizeof(struct s_client));
   first_client->login=time((time_t *)0);
   first_client->ip=cs_inet_addr("127.0.0.1");
   first_client->typ='s';
   first_client->thread=pthread_self();
-  struct s_auth *null_account;
-  if(!cs_malloc(&null_account, sizeof(struct s_auth), -1)){
-  	fprintf(stderr, "Could not allocate memory for master account, exiting...");
-    exit(1);
-  }
-  first_client->account = null_account;
+  first_client->account = xzalloc(sizeof(struct s_auth));
   if (pthread_setspecific(getclient, first_client)) {
     fprintf(stderr, "Could not setspecific getclient in master process, exiting...");
     exit(1);
@@ -1788,7 +1768,7 @@ void cs_disconnect_client(struct s_client * client)
 #ifdef CS_CACHEEX
 static void cs_cache_push_to_client(struct s_client *cl, ECM_REQUEST *er)
 {
-	ECM_REQUEST *erc = cs_malloc(&erc, sizeof(ECM_REQUEST), 0);
+	ECM_REQUEST *erc = xmalloc(sizeof(ECM_REQUEST));
 	memcpy(erc, er, sizeof(ECM_REQUEST));
 	add_job(cl, ACTION_CACHE_PUSH_OUT, erc, sizeof(ECM_REQUEST));
 }
@@ -2159,7 +2139,7 @@ int32_t write_ecm_answer(struct s_reader * reader, ECM_REQUEST *er, int8_t rc, u
 	}
 
 	if (!ea_org)
-		ea = cs_malloc(&ea, sizeof(struct s_ecm_answer), 0); //Free by ACTION_CLIENT_ECM_ANSWER!
+		ea = xzalloc(sizeof(struct s_ecm_answer)); //Free by ACTION_CLIENT_ECM_ANSWER!
 	else
 		ea = ea_org;
 
@@ -2206,7 +2186,7 @@ int32_t write_ecm_answer(struct s_reader * reader, ECM_REQUEST *er, int8_t rc, u
 	struct s_client *cl = er->client;
 	if (cl && !cl->kill) {
 		if (ea_org) { //duplicate for queue
-			ea = cs_malloc(&ea, sizeof(struct s_ecm_answer), 0);
+			ea = xmalloc(sizeof(struct s_ecm_answer));
 			memcpy(ea, ea_org, sizeof(struct s_ecm_answer));
 		}
 		add_job(cl, ACTION_CLIENT_ECM_ANSWER, ea, sizeof(struct s_ecm_answer));
@@ -2237,11 +2217,10 @@ int32_t write_ecm_answer(struct s_reader * reader, ECM_REQUEST *er, int8_t rc, u
 
 ECM_REQUEST *get_ecmtask(void)
 {
-	ECM_REQUEST *er = NULL;
 	struct s_client *cl = cur_client();
 	if(!cl) return NULL;
 
-	if(!cs_malloc(&er,sizeof(ECM_REQUEST), -1)) return NULL;
+	ECM_REQUEST *er = xzalloc(sizeof(ECM_REQUEST));
 
 	cs_ftime(&er->tps);
 	er->rc=E_UNHANDLED;
@@ -2310,7 +2289,7 @@ static void add_cascade_data(struct s_client *client, ECM_REQUEST *er)
 			ll_iter_remove_data(&it);
 	}
 	if (!found) { //add it if not found
-		cu = cs_malloc(&cu, sizeof(struct s_cascadeuser), 0);
+		cu = xzalloc(sizeof(struct s_cascadeuser));
 		cu->caid = er->caid;
 		cu->prid = er->prid;
 		cu->srvid = er->srvid;
@@ -3215,7 +3194,7 @@ void get_cw(struct s_client * client, ECM_REQUEST *er)
 			}
 #endif
 			if (match) {
-				cs_malloc(&ea, sizeof(struct s_ecm_answer), 0);
+				ea = xzalloc(sizeof(struct s_ecm_answer));
 				ea->reader = rdr;
 				if (prv)
 					prv->next = ea;
@@ -3594,7 +3573,8 @@ void do_emm(struct s_client * client, EMM_PACKET *ep)
 
 			if (!(fp = fopen (token, "a"))) {
 				cs_log ("ERROR: Cannot open file '%s' (errno=%d: %s)\n", token, errno, strerror(errno));
-			} else if(cs_malloc(&tmp2, (emm_length + 3)*2 + 1, -1)){
+			} else {
+				tmp2 = xzalloc((emm_length + 3)*2 + 1);
 				fprintf (fp, "%s   %s   ", buf, cs_hexdump(0, ep->hexserial, 8, tmp, sizeof(tmp)));
 				fprintf (fp, "%s\n", cs_hexdump(0, ep->emm, emm_length + 3, tmp2, (emm_length + 3)*2 + 1));
 				free(tmp2);
@@ -3676,7 +3656,7 @@ void do_emm(struct s_client * client, EMM_PACKET *ep)
 
 		rdr_debug_mask(aureader, D_EMM, "emm is being sent to reader");
 
-		EMM_PACKET *emm_pack = cs_malloc(&emm_pack, sizeof(EMM_PACKET), -1);
+		EMM_PACKET *emm_pack = xmalloc(sizeof(EMM_PACKET));
 		memcpy(emm_pack, ep, sizeof(EMM_PACKET));
 		add_job(aureader->client, ACTION_READER_EMM, emm_pack, sizeof(EMM_PACKET));
 	}
@@ -3815,7 +3795,7 @@ void * work_thread(void *ptr) {
 
 	uint16_t bufsize = cl?ph[cl->ctyp].bufsize:1024; //CCCam needs more than 1024bytes!
 	if (!bufsize) bufsize = 1024;
-	uchar *mbuf = cs_malloc(&mbuf, bufsize, 0);
+	uchar *mbuf = xzalloc(bufsize);
 	int32_t n=0, rc=0, i, idx, s;
 	uchar dcw[16];
 	time_t now;
@@ -4101,7 +4081,7 @@ void add_job(struct s_client *cl, int8_t action, void *ptr, int32_t len) {
 		return;
 	}
 
-	struct s_data *data = cs_malloc(&data, sizeof(struct s_data), -1);
+	struct s_data *data = xzalloc(sizeof(struct s_data));
 	if (!data && len && ptr) {
 		free(ptr);
 		return;
@@ -4308,8 +4288,8 @@ static void * check_thread(void) {
 
 static uint32_t resize_pfd_cllist(struct pollfd **pfd, struct s_client ***cl_list, uint32_t old_size, uint32_t new_size) {
 	if (old_size != new_size) {
-		struct pollfd *pfd_new = cs_malloc(&pfd_new, new_size*sizeof(struct pollfd), 0);
-		struct s_client **cl_list_new = cs_malloc(&cl_list_new, new_size*sizeof(cl_list), 0);
+		struct pollfd *pfd_new = xzalloc(new_size * sizeof(struct pollfd));
+		struct s_client **cl_list_new = xzalloc(new_size * sizeof(cl_list));
 		if (old_size > 0) {
 			memcpy(pfd_new, *pfd, old_size*sizeof(struct pollfd));
 			memcpy(cl_list_new, *cl_list, old_size*sizeof(cl_list));
@@ -4508,7 +4488,7 @@ int32_t accept_connection(int32_t i, int32_t j) {
 	int32_t scad = sizeof(cad), n;
 
 	if (ph[i].type==MOD_CONN_UDP) {
-		uchar *buf = cs_malloc(&buf, 1024, -1);
+		uchar *buf = xzalloc(1024);
 		if ((n=recvfrom(ph[i].ptab->ports[j].fd, buf+3, 1024-3, 0, (struct sockaddr *)&cad, (socklen_t *)&scad))>0) {
 			struct s_client *cl;
 			cl=idx_from_ip(cad.sin_addr.s_addr, ntohs(cad.sin_port));
@@ -5101,8 +5081,7 @@ void arm_led_stop_thread(void) {
 }
 
 void cs_switch_led(int32_t led, int32_t action) {
-	struct s_arm_led *arm_led;
-    if(cs_malloc(&arm_led,sizeof(struct s_arm_led), -1)) {
+	struct s_arm_led *arm_led = xzalloc(sizeof(struct s_arm_led));
 	arm_led->start_time = time((time_t)0);
 	arm_led->led = led;
 	arm_led->action = action; }
