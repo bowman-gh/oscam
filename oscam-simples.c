@@ -940,17 +940,6 @@ char *strtolower(char *txt){
   return(txt);
 }
 
-/* Allocates a new empty string and copies str into it. You need to free() the result. */
-char *strnew(char *str){
-  if (!str)
-    return NULL;
-
-  char *newstr = cs_malloc(&newstr, strlen(str)+1, 1);
-  cs_strncpy(newstr, str, strlen(str)+1);
-
-  return newstr;
-}
-
 /* Gets the servicename. Make sure that buf is at least 32 bytes large. */
 char *get_servicename(struct s_client *cl, uint16_t srvid, uint16_t caid, char *buf){
 	int32_t i;

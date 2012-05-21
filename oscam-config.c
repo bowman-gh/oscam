@@ -710,7 +710,7 @@ void chk_t_global(const char *token, char *value)
 
 	if (!strcmp(token, "lb_savepath")) {
 		NULLFREE(cfg.lb_savepath);
-		cfg.lb_savepath = strnew(value);
+		cfg.lb_savepath = xstrdup(value);
 		return;
 	}
 

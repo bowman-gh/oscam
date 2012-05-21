@@ -370,7 +370,6 @@ extern char *monitor_get_proto(struct s_client *);
 extern char *reader_get_type_desc(struct s_reader * rdr, int32_t extended);
 extern char *get_ncd_client_name(char *client_id);
 extern int32_t cs_strnicmp(const char * str1, const char * str2, size_t num);
-extern char *strnew(char *str);
 extern void hexserial_to_newcamd(uchar *source, uchar *dest, uint16_t caid);
 extern void newcamd_to_hexserial(uchar *source, uchar *dest, uint16_t caid);
 extern int32_t check_ip(struct s_ip *ip, in_addr_t n);

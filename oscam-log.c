@@ -88,7 +88,7 @@ static void cs_write_log_int(char *txt)
 		cs_write_log(txt, 1);
 	} else {
 		struct s_log * log = cs_malloc(&log, sizeof(struct s_log), 0);
-		log->txt = strnew(txt);
+		log->txt = xstrdup(txt);
 		log->header_len = 0;
 		log->direct_log = 1;
 		ll_append(log_list, log);
@@ -276,7 +276,7 @@ static void write_to_log_int(char *txt, int8_t header_len)
 #endif
 
 	struct s_log *log = cs_malloc(&log, sizeof(struct s_log), 0);
-	log->txt = strnew(txt);
+	log->txt = xstrdup(txt);
 	log->header_len = header_len;
 	log->direct_log = 0;
 	struct s_client *cl = cur_client();
