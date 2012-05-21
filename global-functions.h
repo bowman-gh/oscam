@@ -298,6 +298,12 @@ extern void reader_do_card_info(struct s_reader * reader);
 /* ===========================
  *        oscam-simples
  * =========================== */
+void die(const char * s, ...) __attribute__ ((format(printf, 1, 2)));
+void *xmalloc(size_t size);
+void *xzalloc(size_t size);
+void *xrealloc(void *ptr, size_t size);
+char *xstrdup(const char *s);
+char *xasprintf(const char * s, ...) __attribute__ ((format(printf, 1, 2)));
 extern struct s_client *cur_client(void);
 extern int32_t get_threadnum(struct s_client *client);
 extern char *get_tmp_dir(void);

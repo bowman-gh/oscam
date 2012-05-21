@@ -2,6 +2,56 @@
 #include "globals.h"
 #include "module-cccam.h"
 
+void die(const char * s, ...) {
+	va_list args;
+	va_start(args, s);
+	fprintf(stderr, "ERROR: ");
+	vfprintf(stderr, s, args);
+	if (s[strlen(s) - 1] != '\n')
+		fprintf(stderr, "\n");
+	va_end(args);
+	exit(EXIT_FAILURE);
+}
+
+void *xmalloc(size_t size) {
+	void *ret = malloc(size);
+	if (!ret)
+		die("Can't alloc %lu bytes", (unsigned long)size);
+	return ret;
+}
+
+void *xzalloc(size_t size) {
+	void *ret = xmalloc(size);
+	memset(ret, 0, size);
+	return ret;
+}
+
+void *xrealloc(void *ptr, size_t size) {
+	void *ret = realloc(ptr, size);
+	if (!ret)
+		die("Can't realloc %lu bytes", (unsigned long)size);
+	return ret;
+}
+
+char *xstrdup(const char *s) {
+	char *ret;
+	if (!s)
+		return NULL;
+	ret = strdup(s);
+	if (!ret)
+		die("Can't strdup %lu bytes\n", (unsigned long)strlen(s) + 1);
+	return ret;
+}
+
+char *xasprintf(const char * s, ...) {
+	char *ret;
+	va_list args;
+	va_start(args, s);
+	if (!asprintf(&ret, s, args))
+		die("Can't allocate memory.");
+	return ret;
+}
+
 /* Gets the client associated to the calling thread. */
 struct s_client *cur_client(void){
 	return (struct s_client *) pthread_getspecific(getclient);
