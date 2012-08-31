@@ -325,6 +325,8 @@ extern char *cs_hexdump(int32_t, const uchar *, int32_t, char *target, int32_t l
 extern in_addr_t cs_inet_order(in_addr_t);
 extern char *cs_inet_ntoa(struct IN_ADDR addr);
 extern void cs_inet_addr(char *txt, struct IN_ADDR *out);
+extern void set_null_ip(struct IN_ADDR *ip);
+extern void set_localhost_ip(struct IN_ADDR *ip);
 
 #ifdef IPV6SUPPORT
 #define GET_IP() *(struct in6_addr *)pthread_getspecific(getip)
@@ -340,8 +342,6 @@ extern int32_t cs_in6addr_lt(struct in6_addr *a, struct in6_addr *b);
 extern void cs_in6addr_copy(struct in6_addr *dst, struct in6_addr *src);
 extern void cs_in6addr_ipv4map(struct in6_addr *dst, in_addr_t src);
 extern void cs_getIPv6fromHost(const char *hostname, struct in6_addr *addr, struct sockaddr_storage *sa);
-extern void set_null_ip(struct in6_addr *ip);
-extern void set_localhost_ip(struct in6_addr *ip);
 #else
 #define GET_IP() *(in_addr_t *)pthread_getspecific(getip)
 #define IP_ISSET(a) a
@@ -350,8 +350,6 @@ extern void set_localhost_ip(struct in6_addr *ip);
 #define SIN_GET_ADDR(a) a.sin_addr.s_addr
 #define SIN_GET_PORT(a) a.sin_port
 #define SIN_GET_FAMILY(a) a.sin_family
-extern void set_null_ip(in_addr_t *ip);
-extern void set_localhost_ip(in_addr_t *ip);
 #endif
 
 extern uint32_t b2i(int32_t, const uchar *);

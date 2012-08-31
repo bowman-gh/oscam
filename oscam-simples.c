@@ -507,29 +507,25 @@ void cs_in6addr_ipv4map(struct in6_addr *dst, in_addr_t src)
 	dst->s6_addr[11] = 0xff;
 	memcpy(dst->s6_addr + 12, &src, 4);
 }
-
-void set_null_ip(struct in6_addr *ip)
-{
-	cs_inet_addr("::", ip);
-}
-
-void set_localhost_ip(struct in6_addr *ip)
-{
-	cs_inet_addr("::1", ip);
-}
-
-#else
-
-void set_null_ip(in_addr_t *ip)
-{
-	*ip = 0;
-}
-
-void set_localhost_ip(in_addr_t *ip)
-{
-	cs_inet_addr("127.0.0.1", ip);
-}
 #endif
+
+void set_null_ip(struct IN_ADDR *ip)
+{
+#ifdef IPV6SUPPORT
+	cs_inet_addr("::", ip);
+#else
+	*ip = 0;
+#endif
+}
+
+void set_localhost_ip(struct IN_ADDR *ip)
+{
+#ifdef IPV6SUPPORT
+	cs_inet_addr("::1", ip);
+#else
+	cs_inet_addr("127.0.0.1", ip);
+#endif
+}
 
 int32_t check_ip(struct s_ip *ip, struct IN_ADDR n)
 {
