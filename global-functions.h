@@ -344,12 +344,12 @@ extern void cs_in6addr_ipv4map(struct in6_addr *dst, in_addr_t src);
 extern void cs_getIPv6fromHost(const char *hostname, struct in6_addr *addr, struct sockaddr_storage *sa);
 #else
 #define GET_IP() *(in_addr_t *)pthread_getspecific(getip)
-#define IP_ISSET(a) a
-#define IP_EQUAL(a, b) a == b
-#define IP_ASSIGN(a, b) a = b
-#define SIN_GET_ADDR(a) a.sin_addr.s_addr
-#define SIN_GET_PORT(a) a.sin_port
-#define SIN_GET_FAMILY(a) a.sin_family
+#define IP_ISSET(a) (a)
+#define IP_EQUAL(a, b) (a == b)
+#define IP_ASSIGN(a, b) (a = b)
+#define SIN_GET_ADDR(a) (a.sin_addr.s_addr)
+#define SIN_GET_PORT(a) (a.sin_port)
+#define SIN_GET_FAMILY(a) (a.sin_family)
 #endif
 
 extern uint32_t b2i(int32_t, const uchar *);
