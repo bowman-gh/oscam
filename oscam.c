@@ -8,7 +8,7 @@
 #include "openxcas/openxcas_api.h"
 #endif
 
-static void cs_fake_client(struct s_client *client, char *usr, int32_t uniq, in_addr_t ip);
+static void cs_fake_client(struct s_client *client, char *usr, int32_t uniq, IP_STRUCT(ip));
 static void chk_dcw(struct s_client *cl, struct s_ecm_answer *ea);
 
 /*****************************************************************************
@@ -128,7 +128,7 @@ int32_t cs_add_cacheex_stats(struct s_client *cl, uint16_t caid, uint16_t srvid,
 }
 #endif
 
-int32_t cs_check_v(uint32_t ip, int32_t port, int32_t add, char *info) {
+int32_t cs_check_v(IP_STRUCT(ip), int32_t port, int32_t add, char *info) {
 	int32_t result = 0;
 	if (cfg.failbantime) {
 
@@ -150,7 +150,7 @@ int32_t cs_check_v(uint32_t ip, int32_t port, int32_t add, char *info) {
 				continue;
 			}
 
-			if (ip == v_ban_entry->v_ip && port == v_ban_entry->v_port ) {
+			if (IP_EQUAL(ip, v_ban_entry->v_ip) && port == v_ban_entry->v_port ) {
 				result=1;
 				if (!info) info = v_ban_entry->info;
 				else if (!v_ban_entry->info) {
@@ -201,15 +201,15 @@ int32_t cs_check_v(uint32_t ip, int32_t port, int32_t add, char *info) {
 	return result;
 }
 
-int32_t cs_check_violation(uint32_t ip, int32_t port) {
+int32_t cs_check_violation(IP_STRUCT(ip), int32_t port) {
         return cs_check_v(ip, port, 0, NULL);
 }
-void cs_add_violation_by_ip(uint32_t ip, int32_t port, char *info) {
+void cs_add_violation_by_ip(IP_STRUCT(ip), int32_t port, char *info) {
         cs_check_v(ip, port, 1, info);
 }
 
 void cs_add_violation(struct s_client *cl, char *info) {
-	 	cs_add_violation_by_ip((uint32_t)cl->ip, ph[cl->ctyp].ptab ? ph[cl->ctyp].ptab->ports[cl->port_idx].s_port : 0, info);
+	 	cs_add_violation_by_ip(cl->ip, ph[cl->ctyp].ptab ? ph[cl->ctyp].ptab->ports[cl->port_idx].s_port : 0, info);
 }
 
 #ifdef WEBIF
@@ -428,11 +428,11 @@ char *username(struct s_client * client)
 	return "NULL";
 }
 
-static struct s_client * idx_from_ip(in_addr_t ip, in_port_t port)
+static struct s_client * idx_from_ip(IP_STRUCT(ip), in_port_t port)
 {
   struct s_client *cl;
   for (cl=first_client; cl ; cl=cl->next)
-    if (!cl->kill && (cl->ip==ip) && (cl->port==port) && ((cl->typ=='c') || (cl->typ=='m')))
+    if (!cl->kill && (IP_EQUAL(cl->ip, ip)) && (cl->port==port) && ((cl->typ=='c') || (cl->typ=='m')))
       return cl;
   return NULL;
 }
@@ -1138,12 +1138,15 @@ void cs_reinit_clients(struct s_auth *new_accounts)
 		}
 }
 
-struct s_client * create_client(in_addr_t ip) {
+struct s_client * create_client(IP_STRUCT(* ip)) {
 	struct s_client *cl;
 
 	if(cs_malloc(&cl, sizeof(struct s_client), -1)){
 		//client part
-		cl->ip=ip;
+		if (ip)
+			IP_ASSIGN(cl->ip, *ip);
+		else
+			set_null_ip(&cl->ip);
 		cl->account = first_client->account;
 
 		//master part
@@ -1175,7 +1178,7 @@ struct s_client * create_client(in_addr_t ip) {
 		last->next = cl;
 		cs_writeunlock(&clientlist_lock);
 	} else {
-		cs_log("max connections reached (out of memory) -> reject client %s", cs_inet_ntoa(ip));
+		cs_log("max connections reached (out of memory) -> reject client %s", ip ? cs_inet_ntoa(*ip) : "with null address");
 		return NULL;
 	}
 	return(cl);
@@ -1203,7 +1206,7 @@ static void init_first_client(void)
   }
   first_client->next = NULL; //terminate clients list with NULL
   first_client->login=time((time_t *)0);
-  first_client->ip=cs_inet_addr("127.0.0.1");
+  set_localhost_ip(&first_client->ip);
   first_client->typ='s';
   first_client->thread=pthread_self();
   struct s_auth *null_account;
@@ -1266,7 +1269,7 @@ static int32_t start_listener(struct s_module *ph, int32_t port_idx)
 {
   int32_t ov=1, timeout, is_udp, i;
   char ptxt[2][32];
-  struct   sockaddr_in sad;     /* structure to hold server's address */
+  SA_STRUCT(sad);     /* structure to hold server's address */
   cs_log("Starting listener %d", port_idx);
 
   ptxt[0][0]=ptxt[1][0]='\0';
@@ -1278,6 +1281,10 @@ static int32_t start_listener(struct s_module *ph, int32_t port_idx)
   is_udp=(ph->type==MOD_CONN_UDP);
 
   memset((char  *)&sad,0,sizeof(sad)); /* clear sockaddr structure   */
+#ifdef IPV6SUPPORT
+  SIN_GET_FAMILY(sad) = AF_INET6;            /* set family to Internet     */
+  SIN_GET_ADDR(sad) = in6addr_any;
+#else
   sad.sin_family = AF_INET;            /* set family to Internet     */
   if (!ph->s_ip)
     ph->s_ip=cfg.srvip;
@@ -1288,23 +1295,39 @@ static int32_t start_listener(struct s_module *ph, int32_t port_idx)
   }
   else
     sad.sin_addr.s_addr=INADDR_ANY;
+#endif
   timeout=cfg.bindwait;
   //ph->fd=0;
   ph->ptab->ports[port_idx].fd = 0;
 
   if (ph->ptab->ports[port_idx].s_port > 0)   /* test for illegal value    */
-    sad.sin_port = htons((uint16_t)ph->ptab->ports[port_idx].s_port);
+    SIN_GET_PORT(sad) = htons((uint16_t)ph->ptab->ports[port_idx].s_port);
   else
   {
     cs_log("%s: Bad port %d", ph->desc, ph->ptab->ports[port_idx].s_port);
     return(0);
   }
 
+#ifdef IPV6SUPPORT
+  if ((ph->ptab->ports[port_idx].fd=socket(PF_INET6,is_udp ? SOCK_DGRAM : SOCK_STREAM, is_udp ? IPPROTO_UDP : IPPROTO_TCP))<0)
+#else
   if ((ph->ptab->ports[port_idx].fd=socket(PF_INET,is_udp ? SOCK_DGRAM : SOCK_STREAM, is_udp ? IPPROTO_UDP : IPPROTO_TCP))<0)
+#endif
   {
     cs_log("%s: Cannot create socket (errno=%d: %s)", ph->desc, errno, strerror(errno));
     return(0);
   }
+
+#ifdef IPV6SUPPORT
+  // setting the server socket option to listen on IPv4 and IPv6 simultaneously
+  int no=0;
+  if (setsockopt(ph->ptab->ports[port_idx].fd, IPPROTO_IPV6, IPV6_V6ONLY, (void *)&no, sizeof(no))<0)
+  {
+    cs_log("%s: setsockopt failed (errno=%d: %s)", ph->desc, errno, strerror(errno));
+    close(ph->ptab->ports[port_idx].fd);
+    return(ph->ptab->ports[port_idx].fd=0);
+  }
+#endif
 
   ov=1;
   if (setsockopt(ph->ptab->ports[port_idx].fd, SOL_SOCKET, SO_REUSEADDR, (void *)&ov, sizeof(ov))<0)
@@ -1382,13 +1405,18 @@ static int32_t start_listener(struct s_module *ph, int32_t port_idx)
    If the hostname is not configured, the ip is set to 0. */
 void cs_user_resolve(struct s_auth *account){
 	if (account->dyndns[0]){
-		in_addr_t lastip = account->dynip;
+		IP_STRUCT(lastip);
+		IP_ASSIGN(lastip, account->dynip);
+#ifdef IPV6SUPPORT
+		cs_getIPv6fromHost((char*)account->dyndns, &account->dynip, NULL);
+#else
 		account->dynip = cs_getIPfromHost((char*)account->dyndns);
+#endif
 
-		if (lastip != account->dynip)  {
+		if (!IP_EQUAL(lastip, account->dynip))  {
 			cs_log("%s: resolved ip=%s", (char*)account->dyndns, cs_inet_ntoa(account->dynip));
 		}
-	} else account->dynip=0;
+	} else set_null_ip(&account->dynip);
 }
 
 /* Starts a thread named nameroutine with the start function startroutine. */
@@ -1540,7 +1568,7 @@ static int32_t restart_cardreader_int(struct s_reader *rdr, int32_t restart) {
 		if (restart) {
 			rdr_log(rdr, "Restarting reader");
 		}
-		cl = create_client(first_client->ip);
+		cl = create_client(&first_client->ip);
 		if (cl == NULL) return 0;
 		cl->reader=rdr;
 		rdr_log(rdr, "creating thread for device %s", rdr->device);
@@ -1594,7 +1622,7 @@ static void init_cardreader(void) {
 	cs_writeunlock(&system_lock);
 }
 
-static void cs_fake_client(struct s_client *client, char *usr, int32_t uniq, in_addr_t ip)
+static void cs_fake_client(struct s_client *client, char *usr, int32_t uniq, IP_STRUCT(ip))
 {
     /* Uniq = 1: only one connection per user
      *
@@ -1616,7 +1644,7 @@ static void cs_fake_client(struct s_client *client, char *usr, int32_t uniq, in_
 	{
 		account = cl->account;
 		if (cl != client && (cl->typ == 'c') && !cl->dup && account && !strcmp(account->usr, usr)
-		   && (uniq < 5) && ((uniq % 2) || (cl->ip != ip)))
+		   && (uniq < 5) && ((uniq % 2) || (!IP_EQUAL(cl->ip, ip))))
 		{
 		        char buf[20];
 			if (uniq  == 3 || uniq == 4)
@@ -1673,8 +1701,8 @@ int32_t cs_auth_client(struct s_client * client, struct s_auth *account, const c
 		cs_log("%s %s-client %s%s (%s%sdisabled account)",
 				client->crypted ? t_crypt : t_plain,
 				ph[client->ctyp].desc,
-				client->ip ? cs_inet_ntoa(client->ip) : "",
-				client->ip ? t_reject : t_reject+1,
+				IP_SET(client->ip) ? cs_inet_ntoa(client->ip) : "",
+				IP_SET(client->ip) ? t_reject : t_reject+1,
 				e_txt ? e_txt : "",
 				e_txt ? " " : "");
 		return(1);
@@ -1687,8 +1715,8 @@ int32_t cs_auth_client(struct s_client * client, struct s_auth *account, const c
 		cs_log("%s %s-client %s%s (%s%sprotocol not allowed)",
 						client->crypted ? t_crypt : t_plain,
 						ph[client->ctyp].desc,
-						client->ip ? cs_inet_ntoa(client->ip) : "",
-						client->ip ? t_reject : t_reject+1,
+						IP_SET(client->ip) ? cs_inet_ntoa(client->ip) : "",
+						IP_SET(client->ip) ? t_reject : t_reject+1,
 						e_txt ? e_txt : "",
 						e_txt ? " " : "");
 		return(1);
@@ -1703,15 +1731,15 @@ int32_t cs_auth_client(struct s_client * client, struct s_auth *account, const c
 		cs_log("%s %s-client %s%s (%s)",
 				client->crypted ? t_crypt : t_plain,
 				ph[client->ctyp].desc,
-				client->ip ? cs_inet_ntoa(client->ip) : "",
-				client->ip ? t_reject : t_reject+1,
+				IP_SET(client->ip) ? cs_inet_ntoa(client->ip) : "",
+				IP_SET(client->ip) ? t_reject : t_reject+1,
 				e_txt ? e_txt : t_msg[rc]);
 		break;
 	default:            // grant/check access
-		if (client->ip && account->dyndns[0]) {
-			if (client->ip != account->dynip)
+		if (IP_SET(client->ip) && account->dyndns[0]) {
+			if (!IP_EQUAL(client->ip, account->dynip))
 				cs_user_resolve(account);
-			if (client->ip != account->dynip) {
+			if (!IP_EQUAL(client->ip, account->dynip)) {
 				cs_add_violation(client, account->usr);
 				rc=2;
 			}
@@ -1778,8 +1806,8 @@ int32_t cs_auth_client(struct s_client * client, struct s_auth *account, const c
 		cs_log("%s %s-client %s%s (%s, %s)",
 			client->crypted ? t_crypt : t_plain,
 			e_txt ? e_txt : ph[client->ctyp].desc,
-			client->ip ? cs_inet_ntoa(client->ip) : "",
-			client->ip ? t_grant : t_grant+1,
+			IP_SET(client->ip) ? cs_inet_ntoa(client->ip) : "",
+			IP_SET(client->ip) ? t_grant : t_grant+1,
 			username(client), t_msg[rc]);
 
 		break;
@@ -1790,7 +1818,7 @@ int32_t cs_auth_client(struct s_client * client, struct s_auth *account, const c
 void cs_disconnect_client(struct s_client * client)
 {
 	char buf[32]={0};
-	if (client->ip)
+	if (IP_SET(client->ip))
 		snprintf(buf, sizeof(buf), " from %s", cs_inet_ntoa(client->ip));
 	cs_log("%s disconnected %s", username(client), buf);
 	if (client == cur_client())
@@ -4232,7 +4260,7 @@ static void * check_thread(void) {
 	time_t ecm_timeout;
 	time_t ecm_mintimeout;
 	struct timespec ts;
-	struct s_client *cl = create_client(first_client->ip);
+	struct s_client *cl = create_client(&first_client->ip);
 	cl->typ = 's';
 #ifdef WEBIF
 	cl->wihidden = 1;
@@ -4575,38 +4603,42 @@ void * reader_check(void) {
 }
 
 int32_t accept_connection(int32_t i, int32_t j) {
-	struct   sockaddr_in cad;
+	SA_STRUCT(cad);
 	int32_t scad = sizeof(cad), n;
+	struct s_client *cl;
 
 	if (ph[i].type==MOD_CONN_UDP) {
 		uchar *buf = cs_malloc(&buf, 1024, -1);
 		if ((n=recvfrom(ph[i].ptab->ports[j].fd, buf+3, 1024-3, 0, (struct sockaddr *)&cad, (socklen_t *)&scad))>0) {
-			struct s_client *cl;
-			cl=idx_from_ip(cad.sin_addr.s_addr, ntohs(cad.sin_port));
+			cl=idx_from_ip(SIN_GET_ADDR(cad), ntohs(SIN_GET_PORT(cad)));
 
 			uint16_t rl;
 			rl=n;
 			buf[0]='U';
 			memcpy(buf+1, &rl, 2);
 
-			if (cs_check_violation((uint32_t)cad.sin_addr.s_addr, ph[i].ptab->ports[j].s_port)) {
+			if (cs_check_violation(SIN_GET_ADDR(cad), ph[i].ptab->ports[j].s_port)) {
 				free(buf);
 				return 0;
 			}
 
 			cs_debug_mask(D_TRACE, "got %d bytes on port %d from ip %s:%d client %s", 
-			    n, ph[i].ptab->ports[j].s_port, cs_inet_ntoa(cad.sin_addr.s_addr), cad.sin_port, username(cl));
+			    n, ph[i].ptab->ports[j].s_port,
+			    cs_inet_ntoa(SIN_GET_ADDR(cad)), SIN_GET_PORT(cad),
+			    username(cl));
 
 			if (!cl) {
-				cl = create_client(cad.sin_addr.s_addr);
+				cl = create_client(&SIN_GET_ADDR(cad));
 				if (!cl) return 0;
 
 				cl->ctyp=i;
 				cl->port_idx=j;
 				cl->udp_fd=ph[i].ptab->ports[j].fd;
+#ifndef IPV6SUPPORT
 				cl->udp_sa=cad;
+#endif
 
-				cl->port=ntohs(cad.sin_port);
+				cl->port=ntohs(SIN_GET_PORT(cad));
 				cl->typ='c';
 
 				add_job(cl, ACTION_CLIENT_INIT, NULL, 0);
@@ -4618,12 +4650,12 @@ int32_t accept_connection(int32_t i, int32_t j) {
 		int32_t pfd3;
 		if ((pfd3=accept(ph[i].ptab->ports[j].fd, (struct sockaddr *)&cad, (socklen_t *)&scad))>0) {
 
-			if (cs_check_violation((uint32_t)cad.sin_addr.s_addr, ph[i].ptab->ports[j].s_port)) {
+			if (cs_check_violation(SIN_GET_ADDR(cad), ph[i].ptab->ports[j].s_port)) {
 				close(pfd3);
 				return 0;
 			}
 
-			struct s_client * cl = create_client(cad.sin_addr.s_addr);
+			cl = create_client(&SIN_GET_ADDR(cad));
 			if (cl == NULL) {
 				close(pfd3);
 				return 0;
@@ -4638,7 +4670,7 @@ int32_t accept_connection(int32_t i, int32_t j) {
 			cl->port_idx=j;
 
 			cl->pfd=pfd3;
-			cl->port=ntohs(cad.sin_port);
+			cl->port=ntohs(SIN_GET_PORT(cad));
 			cl->typ='c';
 
 			add_job(cl, ACTION_CLIENT_INIT, NULL, 0);

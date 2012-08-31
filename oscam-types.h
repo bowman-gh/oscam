@@ -7,6 +7,14 @@ typedef unsigned char uchar;
 
 #endif // _TYPES_H_
 
+#ifdef IPV6SUPPORT
+#define IP_STRUCT(x) struct in6_addr x
+#define SA_STRUCT(x) struct sockaddr_storage x
+#else
+#define IP_STRUCT(x) in_addr_t x
+#define SA_STRUCT(x) struct sockaddr_in x
+#endif
+
 #ifndef NO_ENDIAN_H
  #if defined(__APPLE__)
     #include <machine/endian.h>
