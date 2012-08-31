@@ -328,7 +328,7 @@ extern void cs_inet_addr(char *txt, struct IN_ADDR *out);
 
 #ifdef IPV6SUPPORT
 #define GET_IP() *(struct in6_addr *)pthread_getspecific(getip)
-#define IP_SET(a) !cs_in6addr_isnull(&a)
+#define IP_ISSET(a) !cs_in6addr_isnull(&a)
 #define IP_EQUAL(a, b) cs_in6addr_equal(&a, &b)
 #define IP_ASSIGN(a, b) cs_in6addr_copy(&a, &b)
 #define SIN_GET_ADDR(a) ((struct sockaddr_in6 *)&a)->sin6_addr
@@ -344,7 +344,7 @@ extern void set_null_ip(struct in6_addr *ip);
 extern void set_localhost_ip(struct in6_addr *ip);
 #else
 #define GET_IP() *(in_addr_t *)pthread_getspecific(getip)
-#define IP_SET(a) a
+#define IP_ISSET(a) a
 #define IP_EQUAL(a, b) a == b
 #define IP_ASSIGN(a, b) a = b
 #define SIN_GET_ADDR(a) a.sin_addr.s_addr

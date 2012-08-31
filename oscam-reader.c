@@ -194,7 +194,7 @@ int32_t hostResolve(struct s_reader *rdr){
      cs_log("%s: resolved ip=%s", rdr->device, cs_inet_ntoa(cl->ip));
    }
 
-   return IP_SET(cl->ip);
+   return IP_ISSET(cl->ip);
 }
 
 void clear_block_delay(struct s_reader *rdr) {
@@ -280,7 +280,7 @@ int32_t network_tcp_connection_open(struct s_reader *rdr)
 	if (client->reader->l_port>0) {
 		memset((char *)&loc_sa,0,sizeof(loc_sa));
 		loc_sa.sin_family = AF_INET;
-		if (IP_SET(cfg.srvip))
+		if (IP_ISSET(cfg.srvip))
 			IP_ASSIGN(SIN_GET_ADDR(loc_sa), cfg.srvip);
 		else
 			loc_sa.sin_addr.s_addr = INADDR_ANY;

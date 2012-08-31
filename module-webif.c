@@ -228,7 +228,7 @@ static char *send_oscam_config_global(struct templatevars *vars, struct uriparam
 			else tpl_addMsg(vars, "Write Config failed!");
 		}
 	}
-	if (IP_SET(cfg.srvip))
+	if (IP_ISSET(cfg.srvip))
 	tpl_addVar(vars, TPLADD, "SERVERIP", cs_inet_ntoa(cfg.srvip));
 	tpl_printf(vars, TPLADD, "NICE", "%d", cfg.nice);
 	tpl_printf(vars, TPLADD, "BINDWAIT", "%d", cfg.bindwait);
@@ -427,7 +427,7 @@ static char *send_oscam_config_camd33(struct templatevars *vars, struct uriparam
 
 	if (cfg.c33_port) {
 		tpl_printf(vars, TPLADD, "PORT", "%d", cfg.c33_port);
-		if (IP_SET(cfg.c33_srvip))		tpl_addVar(vars, TPLADD, "SERVERIP", cs_inet_ntoa(cfg.c33_srvip));
+		if (IP_ISSET(cfg.c33_srvip))	tpl_addVar(vars, TPLADD, "SERVERIP", cs_inet_ntoa(cfg.c33_srvip));
 		if (cfg.c33_passive == 1)		tpl_addVar(vars, TPLADD, "PASSIVECHECKED", "selected");
 
 		for (i = 0; i < (int) sizeof(cfg.c33_key); ++i) tpl_printf(vars, TPLAPPEND, "KEY", "%02X",cfg.c33_key[i]);
@@ -464,7 +464,7 @@ static char *send_oscam_config_camd35(struct templatevars *vars, struct uriparam
 
 	if (cfg.c35_port) {
 		tpl_printf(vars, TPLADD, "PORT", "%d", cfg.c35_port);
-		if (IP_SET(cfg.c35_srvip))
+		if (IP_ISSET(cfg.c35_srvip))
 			tpl_addVar(vars, TPLAPPEND, "SERVERIP", cs_inet_ntoa(cfg.c35_srvip));
 
 		if (cfg.c35_udp_suppresscmd08)
@@ -503,7 +503,7 @@ static char *send_oscam_config_camd35tcp(struct templatevars *vars, struct uripa
 		tpl_addVar(vars, TPLADD, "PORT", value);
 		free_mk_t(value);
 
-		if (IP_SET(cfg.c35_tcp_srvip))
+		if (IP_ISSET(cfg.c35_tcp_srvip))
 			tpl_addVar(vars, TPLAPPEND, "SERVERIP", cs_inet_ntoa(cfg.c35_tcp_srvip));
 
 		if (cfg.c35_tcp_suppresscmd08)
@@ -535,7 +535,7 @@ static char *send_oscam_config_csp(struct templatevars *vars, struct uriparams *
 		}
 	}
 
-	if (IP_SET(cfg.csp_srvip))
+	if (IP_ISSET(cfg.csp_srvip))
 		tpl_addVar(vars, TPLAPPEND, "SERVERIP", cs_inet_ntoa(cfg.csp_srvip));
 
 	if (cfg.csp_port)
@@ -576,7 +576,7 @@ static char *send_oscam_config_newcamd(struct templatevars *vars, struct uripara
 		tpl_addVar(vars, TPLADD, "PORT", value);
 		free_mk_t(value);
 
-		if (IP_SET(cfg.ncd_srvip))
+		if (IP_ISSET(cfg.ncd_srvip))
 			tpl_addVar(vars, TPLADD, "SERVERIP", cs_inet_ntoa(cfg.ncd_srvip));
 
 		for (i = 0; i < 14; i++) tpl_printf(vars, TPLAPPEND, "KEY", "%02X", cfg.ncd_key[i]);
@@ -616,7 +616,7 @@ static char *send_oscam_config_radegast(struct templatevars *vars, struct uripar
 		}
 	}
 	tpl_printf(vars, TPLADD, "PORT", "%d", cfg.rad_port);
-	if (IP_SET(cfg.rad_srvip))
+	if (IP_ISSET(cfg.rad_srvip))
 	tpl_addVar(vars, TPLADD, "SERVERIP", cs_inet_ntoa(cfg.rad_srvip));
 	tpl_addVar(vars, TPLADD, "USER", cfg.rad_usr);
 
@@ -743,7 +743,7 @@ static char *send_oscam_config_monitor(struct templatevars *vars, struct uripara
 		}
 	}
 	tpl_printf(vars, TPLADD, "MONPORT", "%d", cfg.mon_port);
-	if (IP_SET(cfg.mon_srvip))
+	if (IP_ISSET(cfg.mon_srvip))
 	tpl_addVar(vars, TPLADD, "SERVERIP", cs_inet_ntoa(cfg.mon_srvip));
 	tpl_printf(vars, TPLADD, "AULOW", "%d", cfg.mon_aulow);
 	tpl_printf(vars, TPLADD, "HIDECLIENTTO", "%d", cfg.mon_hideclient_to);
@@ -4407,7 +4407,7 @@ static int8_t check_httpip(struct IN_ADDR addr) {
 	int8_t i = 0;
 	// check all previously dyndns resolved addresses
 	for(i = 0; i < MAX_HTTP_DYNDNS; i++) {
-		if(IP_SET(cfg.http_dynip[i]) && IP_EQUAL(cfg.http_dynip[i], addr))
+		if(IP_ISSET(cfg.http_dynip[i]) && IP_EQUAL(cfg.http_dynip[i], addr))
 			return 1;
 	}
 	return 0;

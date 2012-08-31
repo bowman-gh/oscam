@@ -3314,7 +3314,7 @@ int32_t cc_srv_connect(struct s_client *cl) {
 
 void cc_srv_init2(struct s_client *cl) {
 	if (!cl->init_done && !cl->kill) {
-		if (IP_SET(cl->ip))
+		if (IP_ISSET(cl->ip))
 			cs_debug_mask(D_CLIENT, "cccam: new connection from %s", cs_inet_ntoa(cl->ip));
 
 		cl->pfd = cl->udp_fd;

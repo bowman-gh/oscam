@@ -377,7 +377,7 @@ static void camd35_server_init(struct s_client * client) {
 static int32_t tcp_connect(struct s_client *cl)
 {
 	if (cl->is_udp) {
-	   if (!IP_SET(SIN_GET_ADDR(cl->udp_sa)) || cl->reader->last_s-cl->reader->last_g > cl->reader->tcp_rto)
+	   if (!IP_ISSET(SIN_GET_ADDR(cl->udp_sa)) || cl->reader->last_s-cl->reader->last_g > cl->reader->tcp_rto)
 	      if (!hostResolve(cl->reader)) return 0;
 	}
 

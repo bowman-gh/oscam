@@ -1701,8 +1701,8 @@ int32_t cs_auth_client(struct s_client * client, struct s_auth *account, const c
 		cs_log("%s %s-client %s%s (%s%sdisabled account)",
 				client->crypted ? t_crypt : t_plain,
 				ph[client->ctyp].desc,
-				IP_SET(client->ip) ? cs_inet_ntoa(client->ip) : "",
-				IP_SET(client->ip) ? t_reject : t_reject+1,
+				IP_ISSET(client->ip) ? cs_inet_ntoa(client->ip) : "",
+				IP_ISSET(client->ip) ? t_reject : t_reject+1,
 				e_txt ? e_txt : "",
 				e_txt ? " " : "");
 		return(1);
@@ -1715,8 +1715,8 @@ int32_t cs_auth_client(struct s_client * client, struct s_auth *account, const c
 		cs_log("%s %s-client %s%s (%s%sprotocol not allowed)",
 						client->crypted ? t_crypt : t_plain,
 						ph[client->ctyp].desc,
-						IP_SET(client->ip) ? cs_inet_ntoa(client->ip) : "",
-						IP_SET(client->ip) ? t_reject : t_reject+1,
+						IP_ISSET(client->ip) ? cs_inet_ntoa(client->ip) : "",
+						IP_ISSET(client->ip) ? t_reject : t_reject+1,
 						e_txt ? e_txt : "",
 						e_txt ? " " : "");
 		return(1);
@@ -1731,12 +1731,12 @@ int32_t cs_auth_client(struct s_client * client, struct s_auth *account, const c
 		cs_log("%s %s-client %s%s (%s)",
 				client->crypted ? t_crypt : t_plain,
 				ph[client->ctyp].desc,
-				IP_SET(client->ip) ? cs_inet_ntoa(client->ip) : "",
-				IP_SET(client->ip) ? t_reject : t_reject+1,
+				IP_ISSET(client->ip) ? cs_inet_ntoa(client->ip) : "",
+				IP_ISSET(client->ip) ? t_reject : t_reject+1,
 				e_txt ? e_txt : t_msg[rc]);
 		break;
 	default:            // grant/check access
-		if (IP_SET(client->ip) && account->dyndns[0]) {
+		if (IP_ISSET(client->ip) && account->dyndns[0]) {
 			if (!IP_EQUAL(client->ip, account->dynip))
 				cs_user_resolve(account);
 			if (!IP_EQUAL(client->ip, account->dynip)) {
@@ -1806,8 +1806,8 @@ int32_t cs_auth_client(struct s_client * client, struct s_auth *account, const c
 		cs_log("%s %s-client %s%s (%s, %s)",
 			client->crypted ? t_crypt : t_plain,
 			e_txt ? e_txt : ph[client->ctyp].desc,
-			IP_SET(client->ip) ? cs_inet_ntoa(client->ip) : "",
-			IP_SET(client->ip) ? t_grant : t_grant+1,
+			IP_ISSET(client->ip) ? cs_inet_ntoa(client->ip) : "",
+			IP_ISSET(client->ip) ? t_grant : t_grant+1,
 			username(client), t_msg[rc]);
 
 		break;
@@ -1818,7 +1818,7 @@ int32_t cs_auth_client(struct s_client * client, struct s_auth *account, const c
 void cs_disconnect_client(struct s_client * client)
 {
 	char buf[32]={0};
-	if (IP_SET(client->ip))
+	if (IP_ISSET(client->ip))
 		snprintf(buf, sizeof(buf), " from %s", cs_inet_ntoa(client->ip));
 	cs_log("%s disconnected %s", username(client), buf);
 	if (client == cur_client())

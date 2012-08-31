@@ -166,7 +166,7 @@ int pandora_client_init(struct s_client *cl) {
 	memset((char *) &loc_sa, 0, sizeof(loc_sa));
 	loc_sa.sin_family = AF_INET;
 
-	if (IP_SET(cfg.srvip))
+	if (IP_ISSET(cfg.srvip))
 		IP_ASSIGN(SIN_GET_ADDR(loc_sa), cfg.srvip);
 	else
 		loc_sa.sin_addr.s_addr = INADDR_ANY;

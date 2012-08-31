@@ -221,7 +221,7 @@ int32_t radegast_cli_init(struct s_client *cl)
 
 static void radegast_server_init(struct s_client *cl) {
 	if (!cl->init_done) {
-		if (IP_SET(cl->ip))
+		if (IP_ISSET(cl->ip))
 			cs_log("radegast: new connection from %s", cs_inet_ntoa(cl->ip));
 		radegast_auth_client(cur_client()->ip);
 		cl->init_done=1;
