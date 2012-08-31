@@ -99,7 +99,9 @@ int pandora_auth_client(struct s_client *cl, struct IN_ADDR ip) {
 	int ok;
 	struct s_auth *account;
 
-#ifndef IPV6SUPPORT
+#ifdef IPV6SUPPORT
+	(void)ip; // Prevent warning about unused var "ip"
+#else
 	if (!cl->pand_ignore_ecm && cfg.pand_allowed) {
 		struct s_ip *p_ip;
 		for (ok = 0, p_ip = cfg.pand_allowed; (p_ip) && (!ok); p_ip
