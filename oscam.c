@@ -8,7 +8,7 @@
 #include "openxcas/openxcas_api.h"
 #endif
 
-static void cs_fake_client(struct s_client *client, char *usr, int32_t uniq, IP_STRUCT(ip));
+static void cs_fake_client(struct s_client *client, char *usr, int32_t uniq, struct IN_ADDR ip);
 static void chk_dcw(struct s_client *cl, struct s_ecm_answer *ea);
 
 /*****************************************************************************
@@ -128,7 +128,7 @@ int32_t cs_add_cacheex_stats(struct s_client *cl, uint16_t caid, uint16_t srvid,
 }
 #endif
 
-int32_t cs_check_v(IP_STRUCT(ip), int32_t port, int32_t add, char *info) {
+int32_t cs_check_v(struct IN_ADDR ip, int32_t port, int32_t add, char *info) {
 	int32_t result = 0;
 	if (cfg.failbantime) {
 
@@ -201,10 +201,10 @@ int32_t cs_check_v(IP_STRUCT(ip), int32_t port, int32_t add, char *info) {
 	return result;
 }
 
-int32_t cs_check_violation(IP_STRUCT(ip), int32_t port) {
+int32_t cs_check_violation(struct IN_ADDR ip, int32_t port) {
         return cs_check_v(ip, port, 0, NULL);
 }
-void cs_add_violation_by_ip(IP_STRUCT(ip), int32_t port, char *info) {
+void cs_add_violation_by_ip(struct IN_ADDR ip, int32_t port, char *info) {
         cs_check_v(ip, port, 1, info);
 }
 
@@ -428,7 +428,7 @@ char *username(struct s_client * client)
 	return "NULL";
 }
 
-static struct s_client * idx_from_ip(IP_STRUCT(ip), in_port_t port)
+static struct s_client * idx_from_ip(struct IN_ADDR ip, in_port_t port)
 {
   struct s_client *cl;
   for (cl=first_client; cl ; cl=cl->next)
@@ -1138,7 +1138,7 @@ void cs_reinit_clients(struct s_auth *new_accounts)
 		}
 }
 
-struct s_client * create_client(IP_STRUCT(* ip)) {
+struct s_client * create_client(struct IN_ADDR * ip) {
 	struct s_client *cl;
 
 	if(cs_malloc(&cl, sizeof(struct s_client), -1)){
@@ -1269,7 +1269,7 @@ static int32_t start_listener(struct s_module *ph, int32_t port_idx)
 {
   int32_t ov=1, timeout, is_udp, i;
   char ptxt[2][32];
-  SA_STRUCT(sad);     /* structure to hold server's address */
+  struct SOCKADDR sad;     /* structure to hold server's address */
   cs_log("Starting listener %d", port_idx);
 
   ptxt[0][0]=ptxt[1][0]='\0';
@@ -1405,7 +1405,7 @@ static int32_t start_listener(struct s_module *ph, int32_t port_idx)
    If the hostname is not configured, the ip is set to 0. */
 void cs_user_resolve(struct s_auth *account){
 	if (account->dyndns[0]){
-		IP_STRUCT(lastip);
+		struct IN_ADDR lastip;
 		IP_ASSIGN(lastip, account->dynip);
 #ifdef IPV6SUPPORT
 		cs_getIPv6fromHost((char*)account->dyndns, &account->dynip, NULL);
@@ -1622,7 +1622,7 @@ static void init_cardreader(void) {
 	cs_writeunlock(&system_lock);
 }
 
-static void cs_fake_client(struct s_client *client, char *usr, int32_t uniq, IP_STRUCT(ip))
+static void cs_fake_client(struct s_client *client, char *usr, int32_t uniq, struct IN_ADDR ip)
 {
     /* Uniq = 1: only one connection per user
      *
@@ -4603,7 +4603,7 @@ void * reader_check(void) {
 }
 
 int32_t accept_connection(int32_t i, int32_t j) {
-	SA_STRUCT(cad);
+	struct SOCKADDR cad;
 	int32_t scad = sizeof(cad), n;
 	struct s_client *cl;
 

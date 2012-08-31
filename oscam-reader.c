@@ -181,7 +181,7 @@ int32_t hostResolve(struct s_reader *rdr){
 
    if(!cl) return 0;
 
-   IP_STRUCT(last_ip);
+   struct IN_ADDR last_ip;
    IP_ASSIGN(last_ip, cl->ip);
 #ifdef IPV6SUPPORT
    cs_getIPv6fromHost(rdr->device, &cl->ip, &cl->udp_sa);
@@ -234,7 +234,7 @@ int32_t network_tcp_connection_open(struct s_reader *rdr)
 
 	memset((char *)&client->udp_sa, 0, sizeof(client->udp_sa));
 
-	IP_STRUCT(last_ip);
+	struct IN_ADDR last_ip;
 	IP_ASSIGN(last_ip, client->ip);
 	if (!hostResolve(rdr))
 		return -1;

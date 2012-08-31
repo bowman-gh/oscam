@@ -8,11 +8,11 @@ typedef unsigned char uchar;
 #endif // _TYPES_H_
 
 #ifdef IPV6SUPPORT
-#define IP_STRUCT(x) struct in6_addr x
-#define SA_STRUCT(x) struct sockaddr_storage x
+#define IN_ADDR in6_addr
+#define SOCKADDR sockaddr_storage
 #else
-#define IP_STRUCT(x) in_addr_t x
-#define SA_STRUCT(x) struct sockaddr_in x
+#define IN_ADDR in_addr_t
+#define SOCKADDR sockaddr_in
 #endif
 
 #ifndef NO_ENDIAN_H

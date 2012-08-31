@@ -4032,8 +4032,7 @@ static char *send_oscam_files(struct templatevars *vars, struct uriparams *param
 }
 
 static char *send_oscam_failban(struct templatevars *vars, struct uriparams *params, int8_t apicall) {
-
-	IP_STRUCT(ip2delete);
+	struct IN_ADDR ip2delete;
 	set_null_ip(&ip2delete);
 	LL_ITER itr = ll_iter_create(cfg.v_list);
 	V_BAN *v_ban_entry;
@@ -4404,7 +4403,7 @@ static char *send_oscam_cacheex(struct templatevars *vars, struct uriparams *par
 }
 #endif
 
-static int8_t check_httpip(IP_STRUCT(addr)) {
+static int8_t check_httpip(struct IN_ADDR addr) {
 	int8_t i = 0;
 	// check all previously dyndns resolved addresses
 	for(i = 0; i < MAX_HTTP_DYNDNS; i++) {
@@ -4414,7 +4413,7 @@ static int8_t check_httpip(IP_STRUCT(addr)) {
 	return 0;
 }
 
-static int8_t check_httpdyndns(IP_STRUCT(addr)) {
+static int8_t check_httpdyndns(struct IN_ADDR addr) {
 
 	// check all previously dyndns resolved addresses
 	if(check_httpip(addr))
@@ -4446,7 +4445,7 @@ static int8_t check_httpdyndns(IP_STRUCT(addr)) {
 	return 0;
 }
 
-static int8_t check_valid_origin(IP_STRUCT(addr)) {
+static int8_t check_valid_origin(struct IN_ADDR addr) {
 
 	// check whether requesting IP is in allowed IP ranges
 	if(check_ip(cfg.http_allowed, addr))

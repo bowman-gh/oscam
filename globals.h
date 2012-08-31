@@ -574,7 +574,7 @@ struct s_emm {
 
 typedef struct v_ban {					// failban listmember
 	int32_t 		v_count;
-	IP_STRUCT(v_ip);
+	struct IN_ADDR	v_ip;
 	int32_t			v_port;
 	time_t 			v_time;
 	char            *info;
@@ -616,7 +616,7 @@ struct s_module {
 	char 			*desc;
 	char 			*logtxt;
 	//int32_t  		s_port;
-	IP_STRUCT(s_ip);
+	struct IN_ADDR	s_ip;
 	uint16_t		bufsize;
 	void			*(*s_handler)(struct s_client *, uchar *, int32_t);
 	void			(*s_init)(struct s_client *);
@@ -812,7 +812,7 @@ struct s_client {
 	int8_t			thread_active;
 	int8_t			kill;
 	LLIST			*joblist;
-	IP_STRUCT(ip);
+	struct IN_ADDR	ip;
 	in_port_t		port;
 	time_t			login;
 	time_t			last;
@@ -847,7 +847,7 @@ struct s_client {
 	int32_t			fd_m2c_c;			// client reads from this fd
 	uint16_t		pipecnt;
 	CS_MUTEX_LOCK 	pipelock;
-	SA_STRUCT(udp_sa);
+	struct SOCKADDR	udp_sa;
 	int8_t			log;
 	int32_t			logcounter;
 	int32_t			cwfound;     		// count found ECMs per client
@@ -1317,7 +1317,7 @@ struct s_auth
 	int8_t			ac_penalty;						// 0 - log, >0 - fake dw
 	struct s_acasc	ac_stat;
 #endif
-	IP_STRUCT(dynip);
+	struct IN_ADDR	dynip;
 	uchar			dyndns[64];
 	time_t			expirationdate;
 	time_t			firstlogin;
@@ -1385,7 +1385,7 @@ struct s_provid
 
 struct s_ip
 {
-	IP_STRUCT(ip[2]);
+	struct IN_ADDR	ip[2];
 	struct s_ip 	*next;
 };
 
@@ -1441,7 +1441,7 @@ struct s_config
 	uint32_t		delay;
 	int32_t			bindwait;
 	int32_t			tosleep;
-	IP_STRUCT(srvip);
+	struct IN_ADDR	srvip;
 	char			*usrfile;
 	char			*cwlogdir;
 	char			*emmlogdir;
@@ -1463,7 +1463,7 @@ struct s_config
 	struct s_provid *provid;
 	struct s_sidtab *sidtab;
 	int32_t			mon_port;
-	IP_STRUCT(mon_srvip);
+	struct IN_ADDR	mon_srvip;
 	struct s_ip 	*mon_allowed;
 	int32_t			mon_aulow;
 	int32_t			mon_hideclient_to;
@@ -1483,7 +1483,7 @@ struct s_config
 	int8_t			http_showpicons;
 	struct s_ip 	*http_allowed;
 	int8_t			http_readonly;
-	IP_STRUCT(http_dynip[MAX_HTTP_DYNDNS]);
+	struct IN_ADDR	http_dynip[MAX_HTTP_DYNDNS];
 	uchar			http_dyndns[MAX_HTTP_DYNDNS][64];
 #ifdef WITH_SSL
 	int8_t			http_use_ssl;
@@ -1497,32 +1497,32 @@ struct s_config
 	int32_t			failbancount;
 	LLIST 			*v_list;						//failban list
 	int32_t			c33_port;
-	IP_STRUCT(c33_srvip);
+	struct IN_ADDR	c33_srvip;
 	uchar			c33_key[16];
 	int32_t			c33_crypted;
 	int32_t			c33_passive;
 	struct s_ip 	*c33_plain;
 	int32_t			c35_port;
-	IP_STRUCT(c35_srvip);
+	struct IN_ADDR	c35_srvip;
 	int8_t			c35_suppresscmd08;
 	int8_t			c35_tcp_suppresscmd08;
 	int8_t			c35_udp_suppresscmd08;
 	PTAB			c35_tcp_ptab;
-	IP_STRUCT(c35_tcp_srvip);
+	struct IN_ADDR	c35_tcp_srvip;
 	PTAB			ncd_ptab;
-	IP_STRUCT(ncd_srvip);
+	struct IN_ADDR	ncd_srvip;
 	uchar			ncd_key[16];
 	int8_t			ncd_keepalive;
 	int8_t			ncd_mgclient;
 	struct s_ip 	*ncd_allowed;
 	int32_t			rad_port;
-	IP_STRUCT(rad_srvip);
+	struct IN_ADDR	rad_srvip;
 #ifdef MODULE_CCCAM
 	uint16_t		cc_port[CS_MAXPORTS];
 	int8_t			cc_reshare;
 	int8_t			cc_ignore_reshare;
 	int32_t			cc_update_interval;
-	IP_STRUCT(cc_srvip);
+	struct IN_ADDR	cc_srvip;
 	char			cc_version[7];
 	int8_t			cc_minimize_cards;
 	int8_t			cc_keep_connected;
@@ -1621,7 +1621,7 @@ struct s_config
 	char		pand_pass[64];
 	int8_t		pand_ecm;
 	int32_t		pand_port;
-	IP_STRUCT(pand_srvip);
+	struct IN_ADDR	pand_srvip;
 #endif
 
 	uint32_t	max_cache_time;  //seconds
@@ -1631,7 +1631,7 @@ struct s_config
 	int8_t		block_same_name; //0=allow all, 1=block client requests to reader with same name (default=1)
 	
 #ifdef CS_CACHEEX
-	IP_STRUCT(csp_srvip);
+	struct IN_ADDR	csp_srvip;
 	int32_t		csp_port;
 	uint32_t 	csp_wait_time;
 
