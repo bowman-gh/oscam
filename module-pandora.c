@@ -95,7 +95,7 @@ static void pandora_send_dcw(struct s_client *cl, ECM_REQUEST *er) {
 			sizeof(cl->udp_sa));
 }
 
-int pandora_auth_client(struct s_client *cl, struct IN_ADDR ip) {
+int pandora_auth_client(struct s_client *cl, IN_ADDR_T ip) {
 	int ok;
 	struct s_auth *account;
 

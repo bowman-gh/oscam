@@ -8,10 +8,10 @@ typedef unsigned char uchar;
 #endif // _TYPES_H_
 
 #ifdef IPV6SUPPORT
-#define IN_ADDR in6_addr
+#define IN_ADDR_T struct in6_addr
 #define SOCKADDR sockaddr_storage
 #else
-#define IN_ADDR in_addr_t
+#define IN_ADDR_T in_addr_t
 #define SOCKADDR sockaddr_in
 #endif
 

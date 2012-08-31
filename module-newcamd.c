@@ -683,7 +683,7 @@ static FILTER mk_user_ftab(void)
   return filt;
 }
 
-static int8_t newcamd_auth_client(struct IN_ADDR ip, uint8_t *deskey)
+static int8_t newcamd_auth_client(IN_ADDR_T ip, uint8_t *deskey)
 {
     int32_t i, ok, rc, sid_list;
     uchar *usr = NULL, *pwd = NULL;

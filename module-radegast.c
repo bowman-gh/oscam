@@ -43,7 +43,7 @@ static int32_t radegast_recv_chk(struct s_client *client, uchar *dcw, int32_t *r
   return (-1);
 }
 
-static void radegast_auth_client(struct IN_ADDR ip)
+static void radegast_auth_client(IN_ADDR_T ip)
 {
   int32_t ok;
   struct s_auth *account;

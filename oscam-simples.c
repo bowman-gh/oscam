@@ -435,7 +435,7 @@ in_addr_t cs_inet_order(in_addr_t n)
   return(n);
 }
 
-char *cs_inet_ntoa(struct IN_ADDR addr)
+char *cs_inet_ntoa(IN_ADDR_T addr)
 {
 #ifdef IPV6SUPPORT
         static char buff[INET6_ADDRSTRLEN];
@@ -457,7 +457,7 @@ char *cs_inet_ntoa(struct IN_ADDR addr)
 #endif
 }
 
-void cs_inet_addr(char *txt, struct IN_ADDR * out)
+void cs_inet_addr(char *txt, IN_ADDR_T * out)
 {
 #ifdef IPV6SUPPORT
     inet_pton(AF_INET6, txt, out->s6_addr);
@@ -509,7 +509,7 @@ void cs_in6addr_ipv4map(struct in6_addr *dst, in_addr_t src)
 }
 #endif
 
-void set_null_ip(struct IN_ADDR *ip)
+void set_null_ip(IN_ADDR_T *ip)
 {
 #ifdef IPV6SUPPORT
 	cs_inet_addr("::", ip);
@@ -518,7 +518,7 @@ void set_null_ip(struct IN_ADDR *ip)
 #endif
 }
 
-void set_localhost_ip(struct IN_ADDR *ip)
+void set_localhost_ip(IN_ADDR_T *ip)
 {
 #ifdef IPV6SUPPORT
 	cs_inet_addr("::1", ip);
@@ -527,7 +527,7 @@ void set_localhost_ip(struct IN_ADDR *ip)
 #endif
 }
 
-int32_t check_ip(struct s_ip *ip, struct IN_ADDR n)
+int32_t check_ip(struct s_ip *ip, IN_ADDR_T n)
 {
 	struct s_ip *p_ip;
 	int32_t ok = 0;

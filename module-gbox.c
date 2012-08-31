@@ -559,7 +559,7 @@ static int32_t gbox_recv(struct s_client *cli, uchar *b, int32_t l)
   switch (gbox_decode_cmd(data)) {
     case MSG_HELLO:
       {
-        struct IN_ADDR ip_clien_gbox;
+        IN_ADDR_T ip_clien_gbox;
         cs_inet_addr(cli->reader->device, &ip_clien_gbox);
         IP_ASSIGN(cli->ip, ip_clien_gbox);
 	if (!gbox->peer.online) {
