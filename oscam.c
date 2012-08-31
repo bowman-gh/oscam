@@ -1138,15 +1138,12 @@ void cs_reinit_clients(struct s_auth *new_accounts)
 		}
 }
 
-struct s_client * create_client(IN_ADDR_T * ip) {
+struct s_client * create_client(IN_ADDR_T ip) {
 	struct s_client *cl;
 
 	if(cs_malloc(&cl, sizeof(struct s_client), -1)){
 		//client part
-		if (ip)
-			IP_ASSIGN(cl->ip, *ip);
-		else
-			set_null_ip(&cl->ip);
+		IP_ASSIGN(cl->ip, ip);
 		cl->account = first_client->account;
 
 		//master part
@@ -1178,7 +1175,7 @@ struct s_client * create_client(IN_ADDR_T * ip) {
 		last->next = cl;
 		cs_writeunlock(&clientlist_lock);
 	} else {
-		cs_log("max connections reached (out of memory) -> reject client %s", ip ? cs_inet_ntoa(*ip) : "with null address");
+		cs_log("max connections reached (out of memory) -> reject client %s", IP_ISSET(ip) ? cs_inet_ntoa(ip) : "with null address");
 		return NULL;
 	}
 	return(cl);
@@ -1568,7 +1565,7 @@ static int32_t restart_cardreader_int(struct s_reader *rdr, int32_t restart) {
 		if (restart) {
 			rdr_log(rdr, "Restarting reader");
 		}
-		cl = create_client(&first_client->ip);
+		cl = create_client(first_client->ip);
 		if (cl == NULL) return 0;
 		cl->reader=rdr;
 		rdr_log(rdr, "creating thread for device %s", rdr->device);
@@ -4260,7 +4257,7 @@ static void * check_thread(void) {
 	time_t ecm_timeout;
 	time_t ecm_mintimeout;
 	struct timespec ts;
-	struct s_client *cl = create_client(&first_client->ip);
+	struct s_client *cl = create_client(first_client->ip);
 	cl->typ = 's';
 #ifdef WEBIF
 	cl->wihidden = 1;
@@ -4628,7 +4625,7 @@ int32_t accept_connection(int32_t i, int32_t j) {
 			    username(cl));
 
 			if (!cl) {
-				cl = create_client(&SIN_GET_ADDR(cad));
+				cl = create_client(SIN_GET_ADDR(cad));
 				if (!cl) return 0;
 
 				cl->ctyp=i;
@@ -4655,7 +4652,7 @@ int32_t accept_connection(int32_t i, int32_t j) {
 				return 0;
 			}
 
-			cl = create_client(&SIN_GET_ADDR(cad));
+			cl = create_client(SIN_GET_ADDR(cad));
 			if (cl == NULL) {
 				close(pfd3);
 				return 0;

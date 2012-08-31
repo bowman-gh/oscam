@@ -77,7 +77,7 @@ extern int32_t recv_from_udpipe(uchar *);
 extern char* username(struct s_client *);
 extern int32_t chk_bcaid(ECM_REQUEST *, CAIDTAB *);
 extern void cs_exit(int32_t sig);
-extern struct s_client * create_client(IN_ADDR_T *);
+extern struct s_client * create_client(IN_ADDR_T);
 extern int32_t cs_auth_client(struct s_client *, struct s_auth *, const char*);
 extern void cs_disconnect_client(struct s_client *);
 extern struct ecm_request_t *check_cwcache(ECM_REQUEST *, struct s_client *);
@@ -325,6 +325,7 @@ extern char *cs_hexdump(int32_t, const uchar *, int32_t, char *target, int32_t l
 extern in_addr_t cs_inet_order(in_addr_t);
 extern char *cs_inet_ntoa(IN_ADDR_T addr);
 extern void cs_inet_addr(char *txt, IN_ADDR_T *out);
+extern IN_ADDR_T get_null_ip(void);
 extern void set_null_ip(IN_ADDR_T *ip);
 extern void set_localhost_ip(IN_ADDR_T *ip);
 

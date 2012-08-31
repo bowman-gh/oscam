@@ -509,6 +509,17 @@ void cs_in6addr_ipv4map(struct in6_addr *dst, in_addr_t src)
 }
 #endif
 
+IN_ADDR_T get_null_ip(void)
+{
+	IN_ADDR_T ip;
+#ifdef IPV6SUPPORT
+	cs_inet_addr("::", &ip);
+#else
+	ip = 0;
+#endif
+	return ip;
+}
+
 void set_null_ip(IN_ADDR_T *ip)
 {
 #ifdef IPV6SUPPORT

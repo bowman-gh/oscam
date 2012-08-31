@@ -4982,7 +4982,7 @@ static void *serve_process(void *conn){
 void http_srv(void) {
 	pthread_t workthread;
 	pthread_attr_t attr;
-	struct s_client * cl = create_client(&first_client->ip);
+	struct s_client * cl = create_client(first_client->ip);
 	if (cl == NULL) return;
 	httpthread = cl->thread = pthread_self();
 	pthread_setspecific(getclient, cl);
