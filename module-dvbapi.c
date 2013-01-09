@@ -1537,6 +1537,13 @@ int32_t dvbapi_parse_capmt(unsigned char *buffer, uint32_t length, int32_t connf
 		ca_mask = (1 << adapter_index);	// use adapter_index as ca_mask (used as index for ca_fd[] array)
 	}
 
+	if (buffer[7]==0x81 && buffer[8]==0x08) {
+		//enigma2
+                demux[demux_id].enigma_namespace=(buffer[9] << 24 | buffer[10] << 16 | buffer[11] << 8 | buffer[12]);
+                demux[demux_id].tsid=(buffer[13] << 8 | buffer[14]);
+                demux[demux_id].onid=(buffer[15] << 8 | buffer[16]);
+	}
+
 	demux[demux_id].program_number=((buffer[1] << 8) | buffer[2]);
 	demux[demux_id].demux_index=demux_index;
 	demux[demux_id].adapter_index=adapter_index;
@@ -2023,6 +2030,9 @@ void dvbapi_process_input(int32_t demux_id, int32_t filter_num, uchar *buffer, i
 			return;
 
 		er->srvid = demux[demux_id].program_number;
+                er->tsid = demux[demux_id].tsid;
+                er->onid = demux[demux_id].onid;
+                er->ens = demux[demux_id].enigma_namespace;
 		er->caid  = caid;
 		er->pid   = curpid->ECM_PID;
 		er->prid  = provid;
